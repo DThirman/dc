@@ -82,7 +82,55 @@ void loop() {
   dist = sonar.ping_in();  
   
   
-  Serial.print("TR: ");
+ 
+
+  
+  int count =0;
+  int thresh = 100;
+  /**
+  if (abs((sensorTR- homeColorTR)*100/homeColorTR) < thresh)
+  {
+    count ++;
+  }  
+    if (abs((sensorTL- homeColorTL)*100/homeColorTL) < thresh)
+  {
+    count ++;
+  }  
+    if (abs((sensorBR- homeColorBR)*100/homeColorBR) < thresh)
+  {
+    count ++;
+  }  
+    if (abs((sensorBL- homeColorBL)*100/homeColorBL) < thresh)
+  {
+    count ++;
+  }
+  **/
+  if (sensorTR > thresh)
+  {
+   count++; 
+  }
+    if (sensorTL > thresh)
+  {
+   count++; 
+  }
+    if (sensorBR > thresh)
+  {
+   count++; 
+  }
+    if (sensorBL > thresh)
+  {
+   count++; 
+  }
+  
+  if (count >=2 )
+  {
+    s.write(180);
+  } 
+   else
+  { 
+    s.write(0);
+  } 
+   Serial.print("TR: ");
   Serial.print(sensorTR);
   Serial.print("  TL: ");
   Serial.print(sensorTL);
@@ -91,31 +139,8 @@ void loop() {
   Serial.print("  BL: ");
   Serial.print(sensorBL);
   Serial.print(" Dist: ");
-  Serial.println(dist);
-
-  
-  int count =0;
-  if (abs((sensorTR- homeColorTR)*100/homeColorTR) < 25)
-  {
-    count ++;
-  }  
-    if (abs((sensorTL- homeColorTL)*100/homeColorTL) < 25)
-  {
-    count ++;
-  }  
-    if (abs((sensorBR- homeColorBR)*100/homeColorBR) < 25)
-  {
-    count ++;
-  }  
-    if (abs((sensorBL- homeColorBL)*100/homeColorBL) < 25)
-  {
-    count ++;
-  }
-  if (count >=3 )
-  {
-    s.write(180);
-    //delay(1000);
-    s.write(0);
-  }  
+  Serial.print(dist);
+  Serial.print(" Count: ");
+  Serial.println(count);
 // delay(100);   
 }
