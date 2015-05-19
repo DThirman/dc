@@ -109,14 +109,14 @@ void setup() {
   s.write(BIN_DOWN);
   Serial.begin(115200);
   
-  int test[5] = {1, 2, 3, 4, 5};
+  int test[5] = {4, 3, 5, 4, 4};
   
   for(int i = 0; i < 5; i++){
     Serial.print(test[i]);
     Serial.println();
   }
   
-  swap(2,3,test);
+  insertion_sort(test, 5);
   
   for(int i = 0; i < 5; i++){
     Serial.print(test[i]);
@@ -527,5 +527,18 @@ void swap(int a, int b, int array[])
   int temp = array[b];
   array[b] = array[a];
   array[a] = temp;
+}
+
+void insertion_sort(int array[], int n)
+{
+  for(int i = 1; i < n; i++){
+    int curr = array[i];
+    int j = i;
+    while(j > 0 && array[j-1] > curr){
+      array[j] = array[j-1];
+      j--;
+    }
+    array[j] = curr;
+  }
 }
 
