@@ -21,7 +21,7 @@
 #define PIN_LEFT_PWM     5
 #define PIN_LEFT_DIR     22
 #define PIN_RIGHT_PWM    6
-#define PIN_LEFT_DIR     23
+#define PIN_RIGHT_DIR     23
 #define PIN_SERVO        3
 
 #define PIN_BREAKBEAM   A5
@@ -89,12 +89,10 @@ int prevBackVal = 0;
 
 
 
-
-
 Servo s;
 
-NewPing sonarR(TRIGGER_PIN_R, ECHO_PIN_R, MAX_DISTANCE); 
-NewPing sonarL(TRIGGER_PIN_L, ECHO_PIN_L, MAX_DISTANCE); 
+NewPing sonarR(PIN_TRIGGER_R, PIN_ECHO_R, MAX_DISTANCE); 
+NewPing sonarL(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE); 
 
 int distR, distL;
 int DistanceCm;
@@ -102,21 +100,35 @@ int DistanceCm;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(leftPWM, OUTPUT);
-  pinMode(rightPWM, OUTPUT);
-  pinMode(leftDir, OUTPUT);
-  pinMode(rightDir, OUTPUT);
+  pinMode(PIN_LEFT_PWM, OUTPUT);
+  pinMode(PIN_RIGHT_PWM, OUTPUT);
+  pinMode(PIN_LEFT_DIR, OUTPUT);
+  pinMode(PIN_RIGHT_DIR, OUTPUT);
   
-  s.attach(servoPin);
+  s.attach(PIN_SERVO);
   s.write(BIN_DOWN);
   Serial.begin(115200);
   
+  int test[5] = {1, 2, 3, 4, 5};
+  
+  for(int i = 0; i < 5; i++){
+    Serial.print(test[i]);
+    Serial.println();
+  }
+  
+  swap(2,3,test);
+  
+  for(int i = 0; i < 5; i++){
+    Serial.print(test[i]);
+    Serial.println();
+  }
+  
   for(int i = 0; i < COLORSETUP; ++i)
   {
-    colorSetup1 += analogRead(colorSense1);
-    colorSetup2 += analogRead(colorSense2);
-    colorSetup3 += analogRead(colorSense3);
-    colorSetup4 += analogRead(colorSense4);
+    colorSetup1 += analogRead(PIN_COLORSENSE1);
+    colorSetup2 += analogRead(PIN_COLORSENSE2);
+    colorSetup3 += analogRead(PIN_COLORSENSE3);
+    colorSetup4 += analogRead(PIN_COLORSENSE4);
   }
   
   for(int j = 0; j < NUM_AVG; j++)
@@ -137,7 +149,7 @@ void setup() {
   homeColor3 = colorSetup3/COLORSETUP;
   homeColor4 = colorSetup4/COLORSETUP;
   
-  plannedPath();
+ // plannedPath();
 }
 
 void loop() {
@@ -258,10 +270,10 @@ void loop() {
   int sum3 = 0;
   int sum4 = 0;
    
-  sensor1 = analogRead(colorSense1);
-  sensor2 = analogRead(colorSense2);
-  sensor3 = analogRead(colorSense3);
-  sensor4 = analogRead(colorSense4); 
+  sensor1 = analogRead(PIN_COLORSENSE1);
+  sensor2 = analogRead(PIN_COLORSENSE2);
+  sensor3 = analogRead(PIN_COLORSENSE3);
+  sensor4 = analogRead(PIN_COLORSENSE4); 
   
   Serial.print(analogRead(frontLaser));
   Serial.print("\t");
@@ -338,7 +350,7 @@ void loop() {
     s.write(0);
   } 
   */
-
+/*
 void plannedPath()
 {
   int actions[10];
@@ -362,7 +374,7 @@ void plannedPath()
     }
   }
 }
-
+*/
 void readSensors()
 {
   
@@ -386,11 +398,10 @@ void doAction(int action)
           driveBack(100);
       break;
     case STOP:
-          driveStop(100);
+          driveStop();
       break;
   }
   
-  case action
 
 
 }
@@ -441,11 +452,11 @@ void driveForward(int speed)
 {
   int vel = speed * 2.55;
   
-  analogWrite(leftPWM, vel);
-  analogWrite(rightPWM, vel);
+  analogWrite(PIN_LEFT_PWM, vel);
+  analogWrite(PIN_RIGHT_PWM, vel);
   
-  digitalWrite(leftDir, 1);
-  digitalWrite(rightDir, 0);
+  digitalWrite(PIN_LEFT_DIR, 1);
+  digitalWrite(PIN_RIGHT_DIR, 0);
 }
 
 
@@ -453,42 +464,42 @@ void driveLeft(int speed)
 {
   int vel = speed * 2.55;
   
-  analogWrite(leftPWM, vel);
-  analogWrite(rightPWM, vel);
+  analogWrite(PIN_LEFT_PWM, vel);
+  analogWrite(PIN_RIGHT_PWM, vel);
   
-  digitalWrite(leftDir, 0);
-  digitalWrite(rightDir, 0);
+  digitalWrite(PIN_LEFT_DIR, 0);
+  digitalWrite(PIN_RIGHT_DIR, 0);
 }
 
 void driveRight(int speed)
 {
   int vel = speed * 2.55;
   
-  analogWrite(leftPWM, vel);
-  analogWrite(rightPWM, vel);
+  analogWrite(PIN_LEFT_PWM, vel);
+  analogWrite(PIN_RIGHT_PWM, vel);
   
-  digitalWrite(leftDir, 1);
-  digitalWrite(rightDir, 1);
+  digitalWrite(PIN_LEFT_DIR, 1);
+  digitalWrite(PIN_RIGHT_DIR, 1);
 }
 
 void driveBack(int speed)
 {
   int vel = speed * 2.55;
   
-  analogWrite(leftPWM, vel);
-  analogWrite(rightPWM, vel);
+  analogWrite(PIN_LEFT_PWM, vel);
+  analogWrite(PIN_RIGHT_PWM, vel);
   
-  digitalWrite(leftDir, 0);
-  digitalWrite(rightDir, 1);
+  digitalWrite(PIN_LEFT_DIR, 0);
+  digitalWrite(PIN_RIGHT_DIR, 1);
 }
 
 void driveStop()
 {
-  analogWrite(leftPWM, 0);
-  analogWrite(rightPWM, 0);
+  analogWrite(PIN_LEFT_PWM, 0);
+  analogWrite(PIN_RIGHT_PWM, 0);
   
-  digitalWrite(leftDir, 0);
-  digitalWrite(rightDir, 1);
+  digitalWrite(PIN_LEFT_DIR, 0);
+  digitalWrite(PIN_RIGHT_DIR, 1);
 }
 
 void printColors()
@@ -509,5 +520,12 @@ void printColors()
 void querySensors()
 {
 
+}
+
+void swap(int a, int b, int array[])
+{
+  int temp = array[b];
+  array[b] = array[a];
+  array[a] = temp;
 }
 
