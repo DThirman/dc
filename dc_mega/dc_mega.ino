@@ -137,13 +137,14 @@ void setup() {
   homeColor2 = colorSetup2 / COLORSETUP;
   homeColor3 = colorSetup3 / COLORSETUP;
   homeColor4 = colorSetup4 / COLORSETUP;
-
+  delay(2000);
   plannedPath();
+  //driveForward(100);
 }
 
 void loop() {
 
-  Serial.write("hi");
+
   //driveForward(255);
 
 }
@@ -174,30 +175,37 @@ void plannedPath()
       int sensor2 = analogRead(PIN_COLORSENSE2);
       int sensor3 = analogRead(PIN_COLORSENSE3);
       int sensor4 = analogRead(PIN_COLORSENSE4);
-      int thresh = 75;
+      int thresh = 25;
       int count = 0;
-      if (abs((sensor1 - homeColor1) * 100 / homeColor1) < thresh)
+      
+      
+      if (abs((sensor1 - startSensor1) * 100 / startSensor1) > thresh)
       {
         count ++;
       }
-      if (abs((sensor2 - homeColor2) * 100 / homeColor2) < thresh)
+      if (abs((sensor2 - startSensor2) * 100 / startSensor2) > thresh)
       {
         count ++;
       }
-      if (abs((sensor3 - homeColor3) * 100 / homeColor3) < thresh)
+      if (abs((sensor3 - startSensor3) * 100 / startSensor3) > thresh)
       {
         count ++;
       }
-      if (abs((sensor4 - homeColor4) * 100 / homeColor4) < thresh)
+      if (abs((sensor4 - startSensor4) * 100 / startSensor4) > thresh)
       {
         count ++;
       }
-      if (count > 2 && j > durations[i] / 2)
+      if (count > 2 && j > durations[i] / 3)
       {
-        j = durations[i] / 2;
+        
+        Serial.write("Wop");
+        j = durations[i] / 3;
       }
     }
+    driveStop();
+    delay(1000);
   }
+  driveStop();
 }
 
 void readSensors()
@@ -212,7 +220,7 @@ void doAction(int action)
   switch (action)
   {
     case FORWARD:
-      driveForward(100);
+      driveForward(255);
       break;
     case LEFT:
       driveLeft(100);
