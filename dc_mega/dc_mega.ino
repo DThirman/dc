@@ -111,6 +111,9 @@ void setup() {
   s.attach(PIN_SERVO);
   s.write(BIN_DOWN);
   Serial.begin(115200);
+  
+  delay(2000);
+
 
   for (int i = 0; i < COLORSETUP; ++i)
   {
@@ -137,7 +140,6 @@ void setup() {
   homeColor2 = colorSetup2 / COLORSETUP;
   homeColor3 = colorSetup3 / COLORSETUP;
   homeColor4 = colorSetup4 / COLORSETUP;
-  delay(2000);
   plannedPath();
   //driveForward(100);
 }
@@ -154,18 +156,23 @@ void plannedPath()
 {
   int actionCounter = 0;
 
+//fflfffrfrfff
+  //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, FORWARD, FORWARD, FORWARD, RIGHT, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, STOP, STOP, STOP};
 
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
+  //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
-  int durations [NUM_ACTIONS] = {1500, 1500, 100, 400, 100, 1500, 1500, 1500, 1500, 100, 1500, 100, 800, 100, 1500, 1500, 1500, 1500, 100};
+  int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 1300, 1300, 1300, 400, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 1300, 1300, 100};
 
-  int startSensor1 = analogRead(PIN_COLORSENSE1);
+  
+
+  for (int i = 0; i < NUM_ACTIONS; i++)
+  {
+    int startSensor1 = analogRead(PIN_COLORSENSE1);
   int startSensor2 = analogRead(PIN_COLORSENSE2);
   int startSensor3 = analogRead(PIN_COLORSENSE3);
   int startSensor4 = analogRead(PIN_COLORSENSE4);
-
-  for (int i = 0; i < 1; i++)
-  {
+  int change_once = 0;
 
     for (int j = durations[i]; j > 0; j--)
     {
@@ -195,11 +202,16 @@ void plannedPath()
       {
         count ++;
       }
-      if (count > 2 && j > durations[i] / 3)
+      if (count > 2 && change_once == 0)
       {
-        
+        change_once = 1;
         Serial.write("Wop");
-        j = durations[i] / 3;
+        //j = durations[i] / 3;
+        j = j/6;
+      }
+      if (j == 1){
+        if (count == 2)
+          j+=300;
       }
     }
     driveStop();
@@ -220,7 +232,7 @@ void doAction(int action)
   switch (action)
   {
     case FORWARD:
-      driveForward(255);
+      driveForward(100);
       break;
     case LEFT:
       driveLeft(100);
@@ -323,4 +335,3 @@ void querySensors()
 {
 
 }
-
