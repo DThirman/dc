@@ -47,7 +47,7 @@
 
 
 //Parameters
-#define NUM_AVG 5
+#define NUM_AVG 7
 #define MAX_BLOCKS 2
 
 #define NUM_ACTIONS 19
@@ -96,7 +96,7 @@ int prevFrontVal = 0;
 int prevBackVal = 0;
 
 unsigned long pingTimer[SONAR_NUM];
-unsigned int cm[SONAR_NUM];
+int cm[SONAR_NUM][NUM_AVG];
 uint8_t currentSensor = 0;
 
 Servo s;
@@ -106,7 +106,8 @@ NewPing sonar[SONAR_NUM] = {
   NewPing(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE)
 };
 
-
+int initialDistL;
+int initialDistR;
 
 int color(int val)
 {
@@ -164,6 +165,30 @@ void setup() {
   
   pingTimer[0] = millis() + 75;
   pingTimer[1] = pingTimer[0] + PING_INTERVAL;
+  
+  Serial.println("Starting sonar initialization");
+  
+  for(uint8_t i = 0; i < NUM_AVG; i++){
+    cm[SONAR_L][i] = 0;
+    cm[SONAR_R][i] = 0;
+  }
+  
+  for(uint8_t i = 0; i < NUM_AVG; i++){
+  
+    delay(PING_INTERVAL);
+    unsigned int uS = sonar[SONAR_L].ping();
+    cm[SONAR_L][i] = uS / US_ROUNDTRIP_CM;
+    uS = sonar[SONAR_R].ping();
+    cm[SONAR_R][i] = uS / US_ROUNDTRIP_CM;
+  }
+  
+  initialDistL = find_median(cm[SONAR_L]);
+  initialDistR = find_median(cm[SONAR_R]);
+  
+  Serial.print("Left initial dist: ");
+  Serial.print(initialDistL);
+  Serial.print("Right initial dist: ");
+  Serial.println(initialDistR);
     
   //plannedPath();
   driveForward(100);
@@ -174,6 +199,11 @@ void setup() {
 
 
 void loop() {
+  delay(PING_INTERVAL);
+  echoCheck(SONAR_L);
+  echoCheck(SONAR_R);
+  oneSensorCycle();
+  /*
   for(uint8_t i = 0; i < SONAR_NUM; i++){
     if(millis() >= pingTimer[i]){
       pingTimer[i] += PING_INTERVAL * SONAR_NUM;
@@ -182,11 +212,11 @@ void loop() {
       }
       sonar[currentSensor].timer_stop();
       currentSensor = i;
-      cm[currentSensor] = MAX_DISTANCE;
+      cm[currentSensor][NUM_AVG-1] = MAX_DISTANCE;
       sonar[currentSensor].ping_timer(echoCheck);
     }
   }
-
+*/
 //  driveForward(100);
 /**
     int sensor1 = analogRead(PIN_COLORSENSE1);
@@ -432,18 +462,56 @@ void querySensors()
 
 }
 
-void echoCheck()
+void echoCheck(int currentSensor)
 {
-  if(sonar[currentSensor].check_timer()){
-    cm[currentSensor] = sonar[currentSensor].ping_result / US_ROUNDTRIP_CM;
+  
+  for(uint8_t i = 1; i < NUM_AVG; i++){
+    cm[currentSensor][i-1] = cm[currentSensor][i];
   }
+  //if(sonar[currentSensor].check_timer()){
+    cm[currentSensor][NUM_AVG-1] = sonar[currentSensor].ping() / US_ROUNDTRIP_CM;
+  //}
 }
 
 void oneSensorCycle()
 {
+  
+  int leftMedian = find_median(cm[SONAR_L]);
+  int rightMedian = find_median(cm[SONAR_R]);
+  
   Serial.print("Left: ");
-  Serial.print(cm[SONAR_L]);
+  Serial.print(leftMedian);
   Serial.print("   Right: ");
-  Serial.println(cm[SONAR_R]);
+  Serial.println(rightMedian);
+  
+}
+
+void swap(int a, int b, int array[])
+{
+  int temp = array[b];
+  array[b] = array[a];
+  array[a] = temp;
+}
+
+void insertion_sort(int array[], int n)
+{
+  for(int i = 1; i < n; i++){
+    int curr = array[i];
+    int j = i;
+    while(j > 0 && array[j-1] > curr){
+      array[j] = array[j-1];
+      j--;
+    }
+    array[j] = curr;
+  }
+}
+
+int find_median(int array[]){
+  int copy[NUM_AVG];
+  for(uint8_t i = 0; i < NUM_AVG; i++){
+    copy[i] = array[i];
+  }
+  insertion_sort(copy, NUM_AVG);
+  return copy[NUM_AVG/2];
 }
 
