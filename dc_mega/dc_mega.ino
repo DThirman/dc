@@ -51,7 +51,8 @@
 
 #define NUM_ACTIONS 19
 
-
+#define PURPLE 1
+#define WHITE 0
 
 int robotState = 0;
 
@@ -101,6 +102,20 @@ NewPing sonarL(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE);
 int distR, distL;
 int DistanceCm;
 
+
+int color(int val)
+{
+   if(val>100)
+   {
+     return 1;
+   }
+   else
+   {
+     return 0;
+   }
+}
+
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(PIN_LEFT_PWM, OUTPUT);
@@ -110,7 +125,8 @@ void setup() {
 
   s.attach(PIN_SERVO);
   s.write(BIN_DOWN);
-  Serial.begin(115200);
+  Serial.begin(9600);
+  Serial.print("begin");
   
   delay(2000);
 
@@ -141,14 +157,29 @@ void setup() {
   homeColor3 = colorSetup3 / COLORSETUP;
   homeColor4 = colorSetup4 / COLORSETUP;
   plannedPath();
-  //driveForward(100);
+
 }
+
+
 
 void loop() {
 
 
-  //driveForward(255);
-
+//  driveForward(100);
+/**
+    int sensor1 = analogRead(PIN_COLORSENSE1);
+      int sensor2 = analogRead(PIN_COLORSENSE2);
+      int sensor3 = analogRead(PIN_COLORSENSE3);
+      int sensor4 = analogRead(PIN_COLORSENSE4);
+      Serial.print("Sensor 1: \t");
+      Serial.print(sensor1);      
+            Serial.print("\tSensor 2: \t");
+      Serial.print(sensor2);
+            Serial.print("\tSensor 3: \t");
+      Serial.print(sensor3);
+            Serial.print("\tSensor 4: \t");
+      Serial.println(sensor4);
+      **/
 }
 
 
@@ -162,56 +193,86 @@ void plannedPath()
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
-  int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 1300, 1300, 1300, 400, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 1300, 1300, 100};
+  int durations [NUM_ACTIONS] = {1300, 1300, 100, 600, 1300, 1300, 1300, 600, 1300, 100, 600, 100, 1300, 1300, 1300, 1300, 1300, 1300, 100};
 
-  
-
-  for (int i = 0; i < NUM_ACTIONS; i++)
-  {
-    int startSensor1 = analogRead(PIN_COLORSENSE1);
-  int startSensor2 = analogRead(PIN_COLORSENSE2);
-  int startSensor3 = analogRead(PIN_COLORSENSE3);
-  int startSensor4 = analogRead(PIN_COLORSENSE4);
-  int change_once = 0;
-
-    for (int j = durations[i]; j > 0; j--)
+ 
+    for (int i =0; i< 2; i++)
     {
-      doAction(actions[i]);
-      delay(1);
-      int sensor1 = analogRead(PIN_COLORSENSE1);
-      int sensor2 = analogRead(PIN_COLORSENSE2);
-      int sensor3 = analogRead(PIN_COLORSENSE3);
-      int sensor4 = analogRead(PIN_COLORSENSE4);
-      int thresh = 25;
-      int count = 0;
-      
-      
-      if (abs((sensor1 - startSensor1) * 100 / startSensor1) > thresh)
+       int startColors[4]= {0,0,0,0}; 
+       for (int j = 0; j < COLORSETUP; j++)
+       {
+        startColors[0] += analogRead(PIN_COLORSENSE1);
+        startColors[1] += analogRead(PIN_COLORSENSE2);
+        startColors[2] += analogRead(PIN_COLORSENSE3);
+        startColors[3] += analogRead(PIN_COLORSENSE4);
+       }
+       int change_once = 0;
+       for(int j=0 ; j<4; j++)
+       {
+         startColors[j] = color(startColors[j]/COLORSETUP); 
+       }
+      for (int j = durations[i]; j > 0; j--)
       {
-        count ++;
-      }
-      if (abs((sensor2 - startSensor2) * 100 / startSensor2) > thresh)
-      {
-        count ++;
-      }
-      if (abs((sensor3 - startSensor3) * 100 / startSensor3) > thresh)
-      {
-        count ++;
-      }
-      if (abs((sensor4 - startSensor4) * 100 / startSensor4) > thresh)
-      {
-        count ++;
-      }
-      if (count > 2 && change_once == 0)
-      {
-        change_once = 1;
-        Serial.write("Wop");
-        //j = durations[i] / 3;
-        j = j/6;
-      }
-      if (j == 1){
-        if (count == 2)
-          j+=300;
+        doAction(actions[i]);
+        delay(1);
+        int colors[4];
+        int sensor1 = analogRead(PIN_COLORSENSE1);
+        colors[0] = color(sensor1);
+        int sensor2 = analogRead(PIN_COLORSENSE2);
+        colors[1]  = color(sensor2);
+        int sensor3 = analogRead(PIN_COLORSENSE3);
+        colors[2]  = color(sensor3);
+        int sensor4 = analogRead(PIN_COLORSENSE4);
+        colors[3]  = color(sensor4);
+        int thresh = 50;
+        int count = 0;
+        /**
+        Serial.print("Color 1: \t");
+        Serial.print(colors[0]);      
+        Serial.print("\tColor 2: \t");
+        Serial.print(colors[1]);
+        Serial.print("\tColor 3: \t");
+        Serial.print(colors[2]);
+        Serial.print("\tColor 4: \t");
+        Serial.print(colors[3]);
+        Serial.print("SColor 1: \t");
+        Serial.print(startColors[0]);      
+        Serial.print("\tSColor 2: \t");
+        Serial.print(startColors[1]);
+        Serial.print("\tSColor 3: \t");
+        Serial.print(startColors[2]);
+        Serial.print("\tSColor 4: \t");
+        Serial.println(startColors[3]);
+        **/
+        for(int k =0; k<4; k++)
+        {
+          /**
+          if(startColors[i]!=colors[i])
+          {
+             count++; 
+          }
+          **/
+
+        }
+                  if(startColors[1]!=colors[1])
+          {
+             count++; 
+          }
+                    if(startColors[3]!=colors[3])
+          {
+             count++; 
+          }
+        if (count == 2 && change_once == 0 && actions[i]==FORWARD)
+        {
+          change_once = 2;
+          Serial.write("Wop");
+          j = (durations[i]-j);
+        }
+        else if (count < 1 && change_once == 2 && actions[i]==FORWARD)
+        {
+          change_once = 0;
+          Serial.write("Woop");
+          j = (durations[i])/2;
       }
     }
     driveStop();
@@ -335,3 +396,4 @@ void querySensors()
 {
 
 }
+
