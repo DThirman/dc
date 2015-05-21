@@ -33,6 +33,7 @@
 #define BIN_DOWN 175
 
 #define MAX_DISTANCE 200
+#define PING_INTERVAL 33
 
 #define PATH 0
 #define CUBE_SEARCH 1
@@ -53,6 +54,10 @@
 
 #define PURPLE 1
 #define WHITE 0
+
+#define SONAR_NUM 2
+#define SONAR_R 0
+#define SONAR_L 1
 
 int robotState = 0;
 
@@ -90,17 +95,17 @@ int blockCount = 0;
 int prevFrontVal = 0;
 int prevBackVal = 0;
 
-
-
-
+unsigned long pingTimer[SONAR_NUM];
+unsigned int cm[SONAR_NUM];
+uint8_t currentSensor = 0;
 
 Servo s;
 
-NewPing sonarR(PIN_TRIGGER_R, PIN_ECHO_R, MAX_DISTANCE);
-NewPing sonarL(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE);
+NewPing sonar[SONAR_NUM] = {
+  NewPing(PIN_TRIGGER_R, PIN_ECHO_R, MAX_DISTANCE),
+  NewPing(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE)
+};
 
-int distR, distL;
-int DistanceCm;
 
 
 int color(int val)
@@ -156,14 +161,31 @@ void setup() {
   homeColor2 = colorSetup2 / COLORSETUP;
   homeColor3 = colorSetup3 / COLORSETUP;
   homeColor4 = colorSetup4 / COLORSETUP;
-  plannedPath();
-
+  
+  pingTimer[0] = millis() + 75;
+  pingTimer[1] = pingTimer[0] + PING_INTERVAL;
+    
+  //plannedPath();
+  driveForward(100);
+  //Serial.print("Driving");
+  //s.write(BIN_INVERTED);
 }
 
 
 
 void loop() {
-
+  for(uint8_t i = 0; i < SONAR_NUM; i++){
+    if(millis() >= pingTimer[i]){
+      pingTimer[i] += PING_INTERVAL * SONAR_NUM;
+      if(i == 0 && currentSensor == SONAR_NUM - 1){
+        oneSensorCycle();
+      }
+      sonar[currentSensor].timer_stop();
+      currentSensor = i;
+      cm[currentSensor] = MAX_DISTANCE;
+      sonar[currentSensor].ping_timer(echoCheck);
+    }
+  }
 
 //  driveForward(100);
 /**
@@ -261,23 +283,31 @@ void plannedPath()
                     if(startColors[3]!=colors[3])
           {
              count++; 
+          }/*
+          if(startColors[1]==colors[1]){
+            count--;
           }
-        /*if (count == 2 && change_once == 0 && actions[i]==FORWARD)
+          if(startColors[3] == colors[3]){
+            count--;
+          }*/
+        if (count == 2 && change_once == 0 && actions[i]==FORWARD)
         {
           change_once = 2;
           Serial.write("Wop");
           j = (durations[i]-j);
-        }*/
-        if (count > 2 && change_once == 0 && actions[i] == FORWARD) 
+        }
+        else if (count > 2 && change_once == 0 && actions[i] == FORWARD) 
         {
           change_once = 1;
           j = j/3;
         }
+        //else if(change_once == 1 && count 
         else if (count < 1 && change_once == 2 && actions[i]==FORWARD)
         {
           change_once = 0;
           Serial.write("Woop");
           j = (durations[i])/2;
+          //j = 0;
       }
     }
     driveStop();
@@ -400,5 +430,20 @@ void printColors()
 void querySensors()
 {
 
+}
+
+void echoCheck()
+{
+  if(sonar[currentSensor].check_timer()){
+    cm[currentSensor] = sonar[currentSensor].ping_result / US_ROUNDTRIP_CM;
+  }
+}
+
+void oneSensorCycle()
+{
+  Serial.print("Left: ");
+  Serial.print(cm[SONAR_L]);
+  Serial.print("   Right: ");
+  Serial.println(cm[SONAR_R]);
 }
 
