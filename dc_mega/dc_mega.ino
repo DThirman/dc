@@ -19,9 +19,13 @@
 #define PIN_COLORSENSE4  A1
 
 #define PIN_LEFT_PWM     5
-#define PIN_LEFT_DIR     22
+
+
+#define PIN_LEFT_DIR1     22
+#define PIN_LEFT_DIR2     24
 #define PIN_RIGHT_PWM    6
-#define PIN_RIGHT_DIR     23
+#define PIN_RIGHT_DIR1     23
+#define PIN_RIGHT_DIR2     25
 #define PIN_SERVO        3
 
 #define PIN_BREAKBEAM   A5
@@ -99,6 +103,8 @@ unsigned long pingTimer[SONAR_NUM];
 int cm[SONAR_NUM][NUM_AVG];
 uint8_t currentSensor = 0;
 
+int turnTime = 0;
+
 Servo s;
 
 NewPing sonar[SONAR_NUM] = {
@@ -126,8 +132,10 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(PIN_LEFT_PWM, OUTPUT);
   pinMode(PIN_RIGHT_PWM, OUTPUT);
-  pinMode(PIN_LEFT_DIR, OUTPUT);
-  pinMode(PIN_RIGHT_DIR, OUTPUT);
+  pinMode(PIN_LEFT_DIR1, OUTPUT);
+  pinMode(PIN_RIGHT_DIR1, OUTPUT);
+    pinMode(PIN_LEFT_DIR2, OUTPUT);
+  pinMode(PIN_RIGHT_DIR2, OUTPUT);
 
   s.attach(PIN_SERVO);
   s.write(BIN_DOWN);
@@ -162,7 +170,7 @@ void setup() {
   homeColor2 = colorSetup2 / COLORSETUP;
   homeColor3 = colorSetup3 / COLORSETUP;
   homeColor4 = colorSetup4 / COLORSETUP;
-  
+  /**
   pingTimer[0] = millis() + 75;
   pingTimer[1] = pingTimer[0] + PING_INTERVAL;
   
@@ -190,19 +198,65 @@ void setup() {
   Serial.print("Right initial dist: ");
   Serial.println(initialDistR);
     
-  //plannedPath();
-  driveForward(100);
+**/
+//  driveForward(100);
+
+  
+  turnTime = calibrateTurn();
+  delay(100);
+
+  driveLeft(100);
+
+  delay(turnTime);
+    driveStop();
+    delay(100);
+  driveLeft(100);
+  delay(turnTime);
+  driveStop();
+  delay(100);
+
+    plannedPath();
   //Serial.print("Driving");
   //s.write(BIN_INVERTED);
 }
 
 
+int calibrateTurn()
+{
+   int time =0;
+   driveRight(100);
+   int count =0;
+   while(count < 6)
+   {
+     delay(1);
+     time+=18;
+    int leftDist = sonar[SONAR_L].ping_cm(); 
+        int rightDist = sonar[SONAR_R].ping_cm(); 
+        Serial.print("Left\t");
+        Serial.print(leftDist);
+                Serial.print("\tRight\t");
+        Serial.println(rightDist);
+    if(leftDist > 0 && leftDist< 30 && rightDist < 30 && rightDist > 0)
+    {
+      count++;
+    }
+    else
+    {
+     count =0; 
+    }
 
+   }
+   Serial.println(time);
+   driveStop();
+   return time;
+   
+}
 void loop() {
-  delay(PING_INTERVAL);
-  echoCheck(SONAR_L);
-  echoCheck(SONAR_R);
-  oneSensorCycle();
+  //delay(PING_INTERVAL);
+  //echoCheck(SONAR_L);
+  //echoCheck(SONAR_R);
+  ////oneSensorCycle();
+  //Serial.println("escaped");
   /*
   for(uint8_t i = 0; i < SONAR_NUM; i++){
     if(millis() >= pingTimer[i]){
@@ -218,7 +272,7 @@ void loop() {
   }
 */
 //  driveForward(100);
-/**
+
     int sensor1 = analogRead(PIN_COLORSENSE1);
       int sensor2 = analogRead(PIN_COLORSENSE2);
       int sensor3 = analogRead(PIN_COLORSENSE3);
@@ -231,7 +285,7 @@ void loop() {
       Serial.print(sensor3);
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
-      **/
+      
 }
 
 
@@ -239,34 +293,46 @@ void plannedPath()
 {
   int actionCounter = 0;
 
-//fflfffrfrfff
+  int forwardTime = 1400;
+  turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
   int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, STOP, STOP, STOP};
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
-  int durations [NUM_ACTIONS] = {1400, 1400, 100, 700, 1400, 1400, 1400, 700, 1400, 100, 700, 100, 1200, 1200, 1200, 1200, 1200, 1200, 100};
+  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
 
  
-    for (int i =0; i< NUM_ACTIONS; i++)
+    for (int i =0; i< NUM_ACTIONS-4; i++)
     {
+      /**
+       int startVals[4]= {0,0,0,0}; 
        int startColors[4]= {0,0,0,0}; 
-       for (int j = 0; j < COLORSETUP; j++)
+       for (int j = 0; j < 1; j++)
        {
-        startColors[0] += analogRead(PIN_COLORSENSE1);
-        startColors[1] += analogRead(PIN_COLORSENSE2);
-        startColors[2] += analogRead(PIN_COLORSENSE3);
-        startColors[3] += analogRead(PIN_COLORSENSE4);
+        startVals[0] += analogRead(PIN_COLORSENSE1);
+        startVals[1] += analogRead(PIN_COLORSENSE2);
+        startVals[2] += analogRead(PIN_COLORSENSE3);
+        startVals[3] += analogRead(PIN_COLORSENSE4);
        }
        int change_once = 0;
        for(int j=0 ; j<4; j++)
        {
-         startColors[j] = color(startColors[j]/COLORSETUP); 
+         startColors[j] = color(startVals[j]/COLORSETUP); 
        }
+       int fix = 0;
+       **/
       for (int j = durations[i]; j > 0; j--)
       {
         doAction(actions[i]);
         delay(1);
+      }
+       driveStop();
+    delay(1000);
+  }
+  driveStop();
+  s.write(BIN_INVERTED);     
+        /**
         int colors[4];
         int sensor1 = analogRead(PIN_COLORSENSE1);
         colors[0] = color(sensor1);
@@ -295,7 +361,36 @@ void plannedPath()
         Serial.print(startColors[2]);
         Serial.print("\tSColor 4: \t");
         Serial.println(startColors[3]);
-        **/
+        
+        
+                Serial.print("Color 1: \t");
+        Serial.print(sensor1);      
+        Serial.print("\tColor 2: \t");
+        Serial.print(sensor2);
+        Serial.print("\tColor 3: \t");
+        Serial.print(sensor3);
+        Serial.print("\tColor 4: \t");
+        Serial.print(sensor4);
+        Serial.print("SColor 1: \t");
+        Serial.print(startVals[0]);      
+        Serial.print("\tSColor 2: \t");
+        Serial.print(startVals[1]);
+        Serial.print("\tSColor 3: \t");
+        Serial.print(startVals[2]);
+        Serial.print("\tSColor 4: \t");
+        Serial.println(startVals[3]);
+**/
+/**
+        if ( (startColors[1] >= sensor2 && (100*(startColors[1]-sensor2))/startColors[1] < thresh)  || (startColors[1] < sensor2 && (100*(sensor2 - startColors[1]))/sensor2 < thresh))
+        {
+         count ++; 
+        }
+        
+         if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
+        {
+         count ++; 
+        }
+        
         for(int k =0; k<4; k++)
         {
           /**
@@ -305,8 +400,9 @@ void plannedPath()
           }
           **/
 
-        }
-                  if(startColors[1]!=colors[1])
+       // }
+        /**
+           if(startColors[1]!=colors[1])
           {
              count++; 
           }
@@ -320,12 +416,29 @@ void plannedPath()
           if(startColors[3] == colors[3]){
             count--;
           }*/
-        if (count == 2 && change_once == 0 && actions[i]==FORWARD)
+          
+          /**
+        if (count == 2 && actions[i]==FORWARD)
         {
-          change_once = 2;
-          Serial.write("Wop");
-          j = (durations[i]-j);
+          Serial.print("wep\n");
+           fix++;
         }
+        else
+        {
+          if(fix >0)
+          {
+                    Serial.write("wap\n"); 
+          }
+         fix = 0; 
+
+        }
+        if (fix == 3)
+        {
+                  change_once = 2;
+          Serial.write("Wop");
+        //j = (durations[i]-j)*.7; 
+        }
+        /**
         else if (count > 2 && change_once == 0 && actions[i] == FORWARD) 
         {
           change_once = 1;
@@ -339,11 +452,13 @@ void plannedPath()
           j = (durations[i])/2;
           //j = 0;
       }
+     
     }
     driveStop();
     delay(1000);
   }
   driveStop();
+  **/
 }
 
 void readSensors()
@@ -395,8 +510,10 @@ void driveForward(int speed)
   analogWrite(PIN_LEFT_PWM, vel);
   analogWrite(PIN_RIGHT_PWM, vel);
 
-  digitalWrite(PIN_LEFT_DIR, 1);
-  digitalWrite(PIN_RIGHT_DIR, 0);
+  digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
 }
 
 
@@ -407,8 +524,10 @@ void driveLeft(int speed)
   analogWrite(PIN_LEFT_PWM, vel);
   analogWrite(PIN_RIGHT_PWM, vel);
 
-  digitalWrite(PIN_LEFT_DIR, 0);
-  digitalWrite(PIN_RIGHT_DIR, 0);
+    digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 1);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 0);
 }
 
 void driveRight(int speed)
@@ -418,8 +537,10 @@ void driveRight(int speed)
   analogWrite(PIN_LEFT_PWM, vel);
   analogWrite(PIN_RIGHT_PWM, vel);
 
-  digitalWrite(PIN_LEFT_DIR, 1);
-  digitalWrite(PIN_RIGHT_DIR, 1);
+    digitalWrite(PIN_LEFT_DIR1, 0);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 1);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
 }
 
 void driveBack(int speed)
@@ -429,8 +550,10 @@ void driveBack(int speed)
   analogWrite(PIN_LEFT_PWM, vel);
   analogWrite(PIN_RIGHT_PWM, vel);
 
-  digitalWrite(PIN_LEFT_DIR, 0);
-  digitalWrite(PIN_RIGHT_DIR, 1);
+    digitalWrite(PIN_LEFT_DIR1, 0);
+  digitalWrite(PIN_RIGHT_DIR1, 1);
+   digitalWrite(PIN_LEFT_DIR2, 1);
+  digitalWrite(PIN_RIGHT_DIR2, 0);
 }
 
 void driveStop()
@@ -438,8 +561,10 @@ void driveStop()
   analogWrite(PIN_LEFT_PWM, 0);
   analogWrite(PIN_RIGHT_PWM, 0);
 
-  digitalWrite(PIN_LEFT_DIR, 0);
-  digitalWrite(PIN_RIGHT_DIR, 1);
+    digitalWrite(PIN_LEFT_DIR1, 0);
+  digitalWrite(PIN_RIGHT_DIR1, 1);
+   digitalWrite(PIN_LEFT_DIR2, 1);
+  digitalWrite(PIN_RIGHT_DIR2, 0);
 }
 
 void printColors()
