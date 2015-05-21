@@ -29,7 +29,7 @@
 
 
 //Define States
-#define BIN_INVERTED 0
+#define BIN_INVERTED 1
 #define BIN_DOWN 175
 
 #define MAX_DISTANCE 200
@@ -189,14 +189,14 @@ void plannedPath()
 
 //fflfffrfrfff
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, FORWARD, FORWARD, FORWARD, RIGHT, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, STOP, STOP, STOP};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, STOP, STOP, STOP};
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
-  int durations [NUM_ACTIONS] = {1300, 1300, 100, 600, 1300, 1300, 1300, 600, 1300, 100, 600, 100, 1300, 1300, 1300, 1300, 1300, 1300, 100};
+  int durations [NUM_ACTIONS] = {1400, 1400, 100, 700, 1400, 1400, 1400, 700, 1400, 100, 700, 100, 1200, 1200, 1200, 1200, 1200, 1200, 100};
 
  
-    for (int i =0; i< 2; i++)
+    for (int i =0; i< NUM_ACTIONS; i++)
     {
        int startColors[4]= {0,0,0,0}; 
        for (int j = 0; j < COLORSETUP; j++)
@@ -262,11 +262,16 @@ void plannedPath()
           {
              count++; 
           }
-        if (count == 2 && change_once == 0 && actions[i]==FORWARD)
+        /*if (count == 2 && change_once == 0 && actions[i]==FORWARD)
         {
           change_once = 2;
           Serial.write("Wop");
           j = (durations[i]-j);
+        }*/
+        if (count > 2 && change_once == 0 && actions[i] == FORWARD) 
+        {
+          change_once = 1;
+          j = j/3;
         }
         else if (count < 1 && change_once == 2 && actions[i]==FORWARD)
         {
