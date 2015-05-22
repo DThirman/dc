@@ -317,16 +317,16 @@ int duration(int action)
     switch (action)
   {
     case FORWARD:
-        return 1500;
+        return 1700;
       break;
     case FORWARD_WALL:
-        return 2500;
+        return 3500;
     break;
     case LEFT:
-      return turnTime*.95;
+      return turnTime*.92;
       break;
     case RIGHT:
-      return turnTime*.95;
+      return turnTime*.92;
       break;
     case BACK:
       return 1400;
@@ -353,9 +353,9 @@ void plannedPath()
                                 FORWARD, FORWARD, FORWARD, LEFT, 
                                 FORWARD_WALL, STOP, LEFT, STOP, 
                                 FORWARD, FORWARD, FORWARD, STOP, 
-                                RIGHT, STOP, RIGHT, DUMP, FORWARD, DUMP_UP,
-                                FORWARD, FORWARD, FORWARD, FORWARD,
-                                FORWARD, RIGHT, FORWARD, FORWARD, 
+                                RIGHT, STOP, RIGHT, STOP, DUMP, STOP,
+                                RIGHT, FORWARD, DUMP_UP, FORWARD,
+                                //FORWARD, RIGHT, FORWARD, FORWARD, 
                                 STOP, LEFT, FORWARD, FORWARD, FORWARD, 
                                 RIGHT, FORWARD, STOP, RIGHT, STOP, 
                                 FORWARD, FORWARD, STOP, DUMP};
@@ -402,8 +402,8 @@ void plannedPath()
          startColors[j] = startVals[j]/NUM_AVG;
        }
        int fix = 0;
-       
-      while(millis() - startTime < duration(actions[i]))
+       int modifier = 0;
+      while(millis() - startTime < (duration(actions[i]) + modifier))
         {
           Serial.print("Action: ");
           Serial.println(i);
@@ -451,6 +451,8 @@ void plannedPath()
           if(count == 2 && !change_once && actions[i] == FORWARD){
             change_once = true;
             startTime = millis() - duration(actions[i]) + 75;
+            //startTime -= 500;
+            //modifier += 500;
           }
           
           delay(1);
@@ -627,7 +629,7 @@ void doAction(int action)
     case DUMP_UP:
       s.write(BIN_DOWN);
       delay(1000);
-      break
+      break;
       
   }
 
@@ -662,8 +664,9 @@ void driveForwardWall(int speed)
 {
   int vel = speed * 2.55;
 
-
+  delay(1);
   int leftDist = sonar[SONAR_L].ping_cm(); 
+  delay(1);
   int rightDist = sonar[SONAR_R].ping_cm();
   
   Serial.print("\nSensor 1 l: \t");
@@ -671,7 +674,7 @@ void driveForwardWall(int speed)
   Serial.print("\nSensor 2 r: \t");
   Serial.println(rightDist);
   
-  if (leftDist > 20)
+  if (leftDist > 25)
   {
     analogWrite(PIN_LEFT_PWM, vel);
   }
@@ -680,7 +683,7 @@ void driveForwardWall(int speed)
     analogWrite(PIN_LEFT_PWM, 0);
   }
   
-  if (rightDist > 20)
+  if (rightDist > 25)
   {
     analogWrite(PIN_RIGHT_PWM, vel);
   }
