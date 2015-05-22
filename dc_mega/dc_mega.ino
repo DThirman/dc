@@ -48,13 +48,13 @@
 #define RIGHT 2
 #define BACK 3
 #define STOP 4
-
+#define DUMP 5
 
 //Parameters
 #define NUM_AVG 7
 #define MAX_BLOCKS 2
 
-#define NUM_ACTIONS 19
+#define NUM_ACTIONS 44
 
 #define PURPLE 1
 #define WHITE 0
@@ -289,6 +289,30 @@ void loop() {
 }
 
 
+int duration(int action)
+{
+    switch (action)
+  {
+    case FORWARD:
+        return 1500;
+      break;
+    case LEFT:
+      return turnTime*.95;
+      break;
+    case RIGHT:
+      return turnTime*.95;
+      break;
+    case BACK:
+      return 1400;
+      break;
+    case STOP:
+      return 100;
+      break;
+    case DUMP:
+    return 1;
+  }
+}
+
 void plannedPath()
 {
   int actionCounter = 0;
@@ -296,14 +320,14 @@ void plannedPath()
   int forwardTime = 1400;
   turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, STOP, STOP, STOP};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, RIGHT, DUMP, FORWARD, FORWARD,FORWARD,FORWARD,FORWARD,FORWARD,FORWARD, RIGHT, FORWARD, FORWARD, STOP, LEFT, FORWARD, FORWARD, FORWARD, RIGHT, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, DUMP};
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
-  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
+//  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
 
  
-    for (int i =0; i< NUM_ACTIONS-4; i++)
+    for (int i =0; i< NUM_ACTIONS; i++)
     {
       /**
        int startVals[4]= {0,0,0,0}; 
@@ -322,7 +346,7 @@ void plannedPath()
        }
        int fix = 0;
        **/
-      for (int j = durations[i]; j > 0; j--)
+      for (int j = duration(actions[i]); j > 0; j--)
       {
         doAction(actions[i]);
         delay(1);
@@ -487,6 +511,10 @@ void doAction(int action)
     case STOP:
       driveStop();
       break;
+    case DUMP:
+      s.write(BIN_INVERTED);
+      delay(500);
+      s.write(BIN_DOWN);
   }
 
 
