@@ -50,11 +50,13 @@
 #define CUBE_DUMP 2
 
 #define FORWARD 0
+#define FORWARD_WALL 6
 #define LEFT 1
 #define RIGHT 2
 #define BACK 3
 #define STOP 4
 #define DUMP 5
+#define DUMP_UP 7
 
 //Parameters
 #define NUM_AVG 7
@@ -317,6 +319,9 @@ int duration(int action)
     case FORWARD:
         return 1500;
       break;
+    case FORWARD_WALL:
+        return 2500;
+    break;
     case LEFT:
       return turnTime*.95;
       break;
@@ -344,7 +349,16 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, RIGHT, DUMP, FORWARD, FORWARD,FORWARD,FORWARD,FORWARD,FORWARD,FORWARD, RIGHT, FORWARD, FORWARD, STOP, LEFT, FORWARD, FORWARD, FORWARD, RIGHT, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, DUMP};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, 
+                                FORWARD, FORWARD, FORWARD, LEFT, 
+                                FORWARD_WALL, STOP, LEFT, STOP, 
+                                FORWARD, FORWARD, FORWARD, STOP, 
+                                RIGHT, STOP, RIGHT, DUMP, FORWARD, DUMP_UP,
+                                FORWARD, FORWARD, FORWARD, FORWARD,
+                                FORWARD, RIGHT, FORWARD, FORWARD, 
+                                STOP, LEFT, FORWARD, FORWARD, FORWARD, 
+                                RIGHT, FORWARD, STOP, RIGHT, STOP, 
+                                FORWARD, FORWARD, STOP, DUMP};
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
@@ -355,12 +369,19 @@ void plannedPath()
     {
       bool change_once = false;
       startTime = millis();
-      if(actions[i] != FORWARD){
+      if(actions[i] != (FORWARD || FORWARD_WALL)){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
         }
-      }
+      } /*else if (actions[i] == FORWARD_WALL)
+      {
+        while(millis() - startTime < duration(actions[i])){
+          doAction(actions[i]);
+          
+        }
+      }*/
+      
       else {
         
       Serial.print("Action: ");
@@ -584,6 +605,9 @@ void doAction(int action)
     case FORWARD:
       driveForward(100);
       break;
+    case FORWARD_WALL:
+      driveForwardWall(100);
+      break;
     case LEFT:
       driveLeft(100);
       break;
@@ -598,8 +622,13 @@ void doAction(int action)
       break;
     case DUMP:
       s.write(BIN_INVERTED);
-      delay(500);
+      delay(1500);
+      break;
+    case DUMP_UP:
       s.write(BIN_DOWN);
+      delay(1000);
+      break
+      
   }
 
 
@@ -629,6 +658,43 @@ void driveForward(int speed)
   digitalWrite(PIN_RIGHT_DIR2, 1);
 }
 
+void driveForwardWall(int speed)
+{
+  int vel = speed * 2.55;
+
+
+  int leftDist = sonar[SONAR_L].ping_cm(); 
+  int rightDist = sonar[SONAR_R].ping_cm();
+  
+  Serial.print("\nSensor 1 l: \t");
+  Serial.println(leftDist);      
+  Serial.print("\nSensor 2 r: \t");
+  Serial.println(rightDist);
+  
+  if (leftDist > 20)
+  {
+    analogWrite(PIN_LEFT_PWM, vel);
+  }
+  else
+  {
+    analogWrite(PIN_LEFT_PWM, 0);
+  }
+  
+  if (rightDist > 20)
+  {
+    analogWrite(PIN_RIGHT_PWM, vel);
+  }
+  else
+  {
+    analogWrite(PIN_RIGHT_PWM, 0);
+  }
+  
+
+  digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
+}
 
 void driveLeft(int speed)
 {
