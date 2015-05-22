@@ -65,9 +65,11 @@
 #define PURPLE 1
 #define WHITE 0
 
-#define SONAR_NUM 2
+#define SONAR_NUM 4
 #define SONAR_R 0
 #define SONAR_L 1
+#define SONAR_SR 2
+#define SONAR_SL 3
 
 int robotState = 0;
 
@@ -111,7 +113,9 @@ Servo s;
 
 NewPing sonar[SONAR_NUM] = {
   NewPing(PIN_TRIGGER_R, PIN_ECHO_R, MAX_DISTANCE),
-  NewPing(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE)
+  NewPing(PIN_TRIGGER_L, PIN_ECHO_L, MAX_DISTANCE),
+  NewPing(PIN_TRIGGER_SR, PIN_ECHO_SR, MAX_DISTANCE),
+  NewPing(PIN_TRIGGER_SL, PIN_ECHO_SL, MAX_DISTANCE)
 };
 
 int initialDistL;
@@ -349,6 +353,7 @@ void plannedPath()
  
     for (int i =0; i< NUM_ACTIONS; i++)
     {
+      bool change_once = false;
       startTime = millis();
       if(actions[i] != FORWARD){
         while(millis() - startTime < duration(actions[i])){
@@ -381,6 +386,8 @@ void plannedPath()
         {
           Serial.print("Action: ");
           Serial.println(i);
+          Serial.println(millis());
+          Serial.println(startTime);
           doAction(actions[i]);
           sensor1 = analogRead(PIN_COLORSENSE1);
           //colors[0] = color(sensor1);
@@ -391,7 +398,6 @@ void plannedPath()
           sensor4 = analogRead(PIN_COLORSENSE4);
           //colors[3]  = color(sensor4);
           int count = 0;
-          bool change_once = false;
           Serial.print("Start 1: ");
           Serial.print(startColors[0]);      
                 Serial.print("\tStart 2: ");
@@ -423,7 +429,7 @@ void plannedPath()
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
             change_once = true;
-            startTime = millis() - duration(actions[i]);
+            startTime = millis() - duration(actions[i]) + 75;
           }
           
           delay(1);
@@ -434,7 +440,7 @@ void plannedPath()
   }
   driveStop();
   s.write(BIN_INVERTED);     
-        /*
+        /**
         int colors[4];
         int sensor1 = analogRead(PIN_COLORSENSE1);
         colors[0] = color(sensor1);
@@ -483,7 +489,7 @@ void plannedPath()
         Serial.print("\tSColor 4: \t");
         Serial.println(startVals[3]);
 **/
-/*
+/**
         if ( (startColors[1] >= sensor2 && (100*(startColors[1]-sensor2))/startColors[1] < thresh)  || (startColors[1] < sensor2 && (100*(sensor2 - startColors[1]))/sensor2 < thresh))
         {
          count ++; 
