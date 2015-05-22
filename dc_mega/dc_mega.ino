@@ -109,7 +109,7 @@ int cm[SONAR_NUM][NUM_AVG];
 uint8_t currentSensor = 0;
 
 int turnTime = 0;
-int thresh = 50;
+int thresh = 35;
 
 Servo s;
 
@@ -147,7 +147,7 @@ void setup() {
   pinMode(PIN_RIGHT_PWM, OUTPUT);
   pinMode(PIN_LEFT_DIR1, OUTPUT);
   pinMode(PIN_RIGHT_DIR1, OUTPUT);
-    pinMode(PIN_LEFT_DIR2, OUTPUT);
+  pinMode(PIN_LEFT_DIR2, OUTPUT);
   pinMode(PIN_RIGHT_DIR2, OUTPUT);
 
   s.attach(PIN_SERVO);
@@ -224,7 +224,7 @@ void setup() {
   Serial.println(homeColor4);
 // driveForward(100);
 
-  
+  /**
   turnTime = calibrateTurn();
   delay(100);
 
@@ -239,8 +239,10 @@ void setup() {
   delay(100);
 
    plannedPath();
+   **/
   //Serial.print("Driving");
   //s.write(BIN_INVERTED);
+  zigZagPath();
 }
 
 
@@ -275,12 +277,16 @@ int calibrateTurn()
    
 }
 void loop() {
+  
+  
+  
+  
   //delay(PING_INTERVAL);
   //echoCheck(SONAR_L);
   //echoCheck(SONAR_R);
   ////oneSensorCycle();
   //Serial.println("escaped");
-  /*
+/*  
   for(uint8_t i = 0; i < SONAR_NUM; i++){
     if(millis() >= pingTimer[i]){
       pingTimer[i] += PING_INTERVAL * SONAR_NUM;
@@ -293,10 +299,18 @@ void loop() {
       sonar[currentSensor].ping_timer(echoCheck);
     }
   }
-*/
+  */
+  
+  int leftDist = sonar[SONAR_L].ping_cm(); 
+  int rightDist = sonar[SONAR_R].ping_cm(); 
+  Serial.print("Left\t");
+  Serial.print(leftDist);
+  Serial.print("\tRight\t");
+  Serial.println(rightDist);
+
 //  driveForward(100);
 /*
-    int sensor1 = analogRead(PIN_COLORSENSE1);
+      int sensor1 = analogRead(PIN_COLORSENSE1);
       int sensor2 = analogRead(PIN_COLORSENSE2);
       int sensor3 = analogRead(PIN_COLORSENSE3);
       int sensor4 = analogRead(PIN_COLORSENSE4);
@@ -308,7 +322,22 @@ void loop() {
       Serial.print(sensor3);
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
-      */
+      
+      
+      bool diff1 = different_color(homeColor1, sensor1);
+      bool diff2 = different_color(homeColor2, sensor2);
+      bool diff3 = different_color(homeColor3, sensor3);
+      bool diff4 = different_color(homeColor4, sensor4);
+      
+      if(diff1 & diff2 & diff3 & diff4)
+      {
+          driveBack(100);
+      }
+      else
+      {
+        driveForward(100);
+      }
+*/
 }
 
 
@@ -467,11 +496,6 @@ void plannedPath()
   }
   driveStop();
   s.write(BIN_INVERTED);     
-
-}
-
-void readSensors()
-{
 
 }
 
@@ -641,11 +665,6 @@ void printColors()
   Serial.println(val4);
 }
 
-void querySensors()
-{
-
-}
-
 void echoCheck(int currentSensor)
 {
   
@@ -697,5 +716,146 @@ int find_median(int array[]){
   }
   insertion_sort(copy, NUM_AVG);
   return copy[NUM_AVG/2];
+}
+
+void zigZagPath()
+{
+  Serial.println("Plan path");
+  int actionCounter = 0;
+
+  int forwardTime = 1400;
+  int startTime;
+
+  //turnTime *=.95;
+  //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, 
+                                FORWARD, FORWARD, FORWARD, LEFT, 
+                                FORWARD_WALL, STOP, LEFT, STOP, 
+                                FORWARD, FORWARD, FORWARD, STOP, 
+                                LEFT, STOP, DUMP, STOP, FORWARD, STOP, LEFT, FORWARD,
+                                RIGHT, FORWARD, DUMP_UP, FORWARD,
+                                //FORWARD, RIGHT, FORWARD, FORWARD, 
+                                STOP, LEFT, FORWARD, FORWARD, FORWARD, 
+                                RIGHT, FORWARD, STOP, RIGHT, STOP, 
+                                FORWARD, FORWARD, STOP, DUMP};
+
+  //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
+
+  //int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
+
+ 
+    for (int i =0; i< NUM_ACTIONS; i++)
+    {
+      bool change_once = false;
+      startTime = millis();
+      if(actions[i] != (FORWARD || FORWARD_WALL)){
+        while(millis() - startTime < duration(actions[i])){
+          doAction(actions[i]);
+          delay(5);
+        }
+      } /*else if (actions[i] == FORWARD_WALL)
+      {
+        while(millis() - startTime < duration(actions[i])){
+          doAction(actions[i]);
+          
+        }
+      }*/
+      
+      else {
+        
+      Serial.print("Action: ");
+      Serial.println(i);
+       int startVals[4]= {0,0,0,0}; 
+       int startColors[4]= {0,0,0,0}; 
+       for (int j = 0; j < NUM_AVG; j++)
+       {
+        startVals[0] += analogRead(PIN_COLORSENSE1);
+        startVals[1] += analogRead(PIN_COLORSENSE2);
+        startVals[2] += analogRead(PIN_COLORSENSE3);
+        startVals[3] += analogRead(PIN_COLORSENSE4);
+       }
+       for(int j=0 ; j<4; j++)
+       {
+         //startColors[j] = color(startVals[j]/NUM_AVG); 
+         startColors[j] = startVals[j]/NUM_AVG;
+       }
+       int fix = 0;
+       int modifier = 0;
+       int dur =  (duration(actions[i]) + modifier);
+       startTime = millis();
+      while(millis() - startTime < dur)
+        {
+          Serial.print("Action: ");
+          Serial.println(i);
+          Serial.println(millis());
+          Serial.println(startTime);
+          doAction(actions[i]);
+          sensor1 = analogRead(PIN_COLORSENSE1);
+          //colors[0] = color(sensor1);
+          sensor2 = analogRead(PIN_COLORSENSE2);
+          //colors[1]  = color(sensor2);
+          sensor3 = analogRead(PIN_COLORSENSE3);
+          //colors[2]  = color(sensor3);
+          sensor4 = analogRead(PIN_COLORSENSE4);
+          //colors[3]  = color(sensor4);
+          int count = 0;
+          Serial.print("Start 1: ");
+          Serial.print(startColors[0]);      
+                Serial.print("\tStart 2: ");
+          Serial.print(startColors[1]);
+                Serial.print("\tStart 3: ");
+          Serial.print(startColors[2]);
+                Serial.print("\tStart 4: ");
+          Serial.println(startColors[3]);
+          Serial.print("Sensor 1: ");
+        Serial.print(sensor1);      
+              Serial.print("\tSensor 2: ");
+        Serial.print(sensor2);
+              Serial.print("\tSensor 3: ");
+        Serial.print(sensor3);
+              Serial.print("\tSensor 4: ");
+        Serial.println(sensor4);
+          Serial.println(different_color(startColors[1], sensor2));
+          Serial.println(different_color(startColors[3], sensor4));
+          if (different_color(startColors[0], sensor1))
+          {
+           count ++; 
+          }
+          
+           //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
+          if(different_color(startColors[2], sensor3))
+          {
+           count ++; 
+          }
+          
+          if(count == 2 && !change_once && actions[i] == FORWARD){
+              change_once = true;
+//            startTime = millis() - duration(actions[i]) + 50;
+              dur = millis()-startTime+50;
+              startTime = millis();
+
+            //startTime -= 500;
+            //modifier += 500;
+          }
+          
+          delay(100);
+        }
+       driveStop();
+      delay(1000);
+      }
+  }
+  driveStop();
+  s.write(BIN_INVERTED);     
+}
+
+
+void gameOverMan()
+{
+  //check color sensors
+  //compare to home color
+  //if not same dump
+  //else if cant go forward go back 1 sqaure and dump
+  //else go forward 1 square and dump
+  Serial.print("Game over, man! GAME OVER!");
 }
 
