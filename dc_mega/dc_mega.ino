@@ -228,12 +228,12 @@ void setup() {
   turnTime = calibrateTurn();
   delay(100);
 
-  driveLeft(100);
+  driveLeft(75);
 
   delay(turnTime);
     driveStop();
     delay(100);
-  driveLeft(100);
+  driveLeft(75);
   delay(turnTime);
   driveStop();
   delay(100);
@@ -247,7 +247,7 @@ void setup() {
 int calibrateTurn()
 {
    int time = millis();
-   driveRight(100);
+   driveRight(75);
    int count =0;
    while(count < 6)
    {
@@ -317,7 +317,7 @@ int duration(int action)
     switch (action)
   {
     case FORWARD:
-        return 1700;
+        return 1400;
       break;
     case FORWARD_WALL:
         return 3500;
@@ -353,7 +353,7 @@ void plannedPath()
                                 FORWARD, FORWARD, FORWARD, LEFT, 
                                 FORWARD_WALL, STOP, LEFT, STOP, 
                                 FORWARD, FORWARD, FORWARD, STOP, 
-                                RIGHT, STOP, RIGHT, STOP, DUMP, STOP,
+                                LEFT, STOP, DUMP, STOP, FORWARD, STOP, LEFT, FORWARD,
                                 RIGHT, FORWARD, DUMP_UP, FORWARD,
                                 //FORWARD, RIGHT, FORWARD, FORWARD, 
                                 STOP, LEFT, FORWARD, FORWARD, FORWARD, 
@@ -402,7 +402,9 @@ void plannedPath()
        }
        int fix = 0;
        int modifier = 0;
-      while(millis() - startTime < (duration(actions[i]) + modifier))
+       int dur =  (duration(actions[i]) + modifier);
+       startTime = millis();
+      while(millis() - startTime < dur)
         {
           Serial.print("Action: ");
           Serial.println(i);
@@ -448,13 +450,16 @@ void plannedPath()
           }
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
-            change_once = true;
-            startTime = millis() - duration(actions[i]) + 50;
+              change_once = true;
+//            startTime = millis() - duration(actions[i]) + 50;
+              dur = millis()-startTime+50;
+              startTime = millis();
+
             //startTime -= 500;
             //modifier += 500;
           }
           
-          delay(1);
+          delay(100);
         }
        driveStop();
       delay(1000);
@@ -462,134 +467,7 @@ void plannedPath()
   }
   driveStop();
   s.write(BIN_INVERTED);     
-        /**
-        int colors[4];
-        int sensor1 = analogRead(PIN_COLORSENSE1);
-        colors[0] = color(sensor1);
-        int sensor2 = analogRead(PIN_COLORSENSE2);
-        colors[1]  = color(sensor2);
-        int sensor3 = analogRead(PIN_COLORSENSE3);
-        colors[2]  = color(sensor3);
-        int sensor4 = analogRead(PIN_COLORSENSE4);
-        colors[3]  = color(sensor4);
-        int thresh = 50;
-        int count = 0;
-        /**
-        Serial.print("Color 1: \t");
-        Serial.print(colors[0]);      
-        Serial.print("\tColor 2: \t");
-        Serial.print(colors[1]);
-        Serial.print("\tColor 3: \t");
-        Serial.print(colors[2]);
-        Serial.print("\tColor 4: \t");
-        Serial.print(colors[3]);
-        Serial.print("SColor 1: \t");
-        Serial.print(startColors[0]);      
-        Serial.print("\tSColor 2: \t");
-        Serial.print(startColors[1]);
-        Serial.print("\tSColor 3: \t");
-        Serial.print(startColors[2]);
-        Serial.print("\tSColor 4: \t");
-        Serial.println(startColors[3]);
-        
-        
-                Serial.print("Color 1: \t");
-        Serial.print(sensor1);      
-        Serial.print("\tColor 2: \t");
-        Serial.print(sensor2);
-        Serial.print("\tColor 3: \t");
-        Serial.print(sensor3);
-        Serial.print("\tColor 4: \t");
-        Serial.print(sensor4);
-        /*
-        Serial.print("SColor 1: \t");
-        Serial.print(startVals[0]);      
-        Serial.print("\tSColor 2: \t");
-        Serial.print(startVals[1]);
-        Serial.print("\tSColor 3: \t");
-        Serial.print(startVals[2]);
-        Serial.print("\tSColor 4: \t");
-        Serial.println(startVals[3]);
-**/
-/**
-        if ( (startColors[1] >= sensor2 && (100*(startColors[1]-sensor2))/startColors[1] < thresh)  || (startColors[1] < sensor2 && (100*(sensor2 - startColors[1]))/sensor2 < thresh))
-        {
-         count ++; 
-        }
-        
-         if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-        {
-         count ++; 
-        }
-        */
-       // for(int k =0; k<4; k++)
-        //{
-          /**
-          if(startColors[i]!=colors[i])
-          {
-             count++; 
-          }
-          **/
 
-       // }
-        /**
-           if(startColors[1]!=colors[1])
-          {
-             count++; 
-          }
-                    if(startColors[3]!=colors[3])
-          {
-             count++; 
-          }/*
-          if(startColors[1]==colors[1]){
-            count--;
-          }
-          if(startColors[3] == colors[3]){
-            count--;
-          }*/
-          
-          /**
-        if (count == 2 && actions[i]==FORWARD)
-        {
-          Serial.print("wep\n");
-           fix++;
-        }
-        else
-        {
-          if(fix >0)
-          {
-                    Serial.write("wap\n"); 
-          }
-         fix = 0; 
-
-        }
-        if (fix == 3)
-        {
-                  change_once = 2;
-          Serial.write("Wop");
-        //j = (durations[i]-j)*.7; 
-        }
-        /**
-        else if (count > 2 && change_once == 0 && actions[i] == FORWARD) 
-        {
-          change_once = 1;
-          j = j/3;
-        }
-        //else if(change_once == 1 && count 
-        else if (count < 1 && change_once == 2 && actions[i]==FORWARD)
-        {
-          change_once = 0;
-          Serial.write("Woop");
-          j = (durations[i])/2;
-          //j = 0;
-      }
-     
-    }
-    driveStop();
-    delay(1000);
-  }
-  driveStop();
-  **/
 }
 
 void readSensors()
@@ -610,10 +488,10 @@ void doAction(int action)
       driveForwardWall(100);
       break;
     case LEFT:
-      driveLeft(100);
+      driveLeft(75);
       break;
     case RIGHT:
-      driveRight(100);
+      driveRight(75);
       break;
     case BACK:
       driveBack(100);
@@ -673,7 +551,7 @@ void driveForwardWall(int speed)
   Serial.print("\nSensor 2 r: \t");
   Serial.println(rightDist);
   
-  if (leftDist > 25)
+  if (leftDist > 30)
   {
     analogWrite(PIN_LEFT_PWM, vel);
   }
@@ -682,7 +560,7 @@ void driveForwardWall(int speed)
     analogWrite(PIN_LEFT_PWM, 0);
   }
   
-  if (rightDist > 25)
+  if (rightDist > 30)
   {
     analogWrite(PIN_RIGHT_PWM, vel);
   }
