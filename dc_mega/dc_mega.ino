@@ -13,17 +13,23 @@
 #define PIN_TRIGGER_L  10
 #define PIN_ECHO_L     11
 
+#define PIN_TRIGGER_SL 12
+#define PIN_ECHO_SL    13
+
+#define PIN_TRIGGER_SR 6
+#define PIN_ECHO_SR    7
+
 #define PIN_COLORSENSE1  A2
 #define PIN_COLORSENSE2  A3
 #define PIN_COLORSENSE3  A0
 #define PIN_COLORSENSE4  A1
 
-#define PIN_LEFT_PWM     5
+#define PIN_LEFT_PWM     4
 
 
 #define PIN_LEFT_DIR1     22
 #define PIN_LEFT_DIR2     24
-#define PIN_RIGHT_PWM    6
+#define PIN_RIGHT_PWM    5
 #define PIN_RIGHT_DIR1     23
 #define PIN_RIGHT_DIR2     25
 #define PIN_SERVO        3
@@ -77,11 +83,6 @@ int sensor2 = 0;
 int sensor3 = 0;
 int sensor4 = 0;
 
-int colorSetup1 = 0;
-int colorSetup2 = 0;
-int colorSetup3 = 0;
-int colorSetup4 = 0;
-
 int colorArr1[NUM_AVG];
 int colorArr2[NUM_AVG];
 int colorArr3[NUM_AVG];
@@ -104,6 +105,7 @@ int cm[SONAR_NUM][NUM_AVG];
 uint8_t currentSensor = 0;
 
 int turnTime = 0;
+int thresh = 50;
 
 Servo s;
 
@@ -127,6 +129,11 @@ int color(int val)
    }
 }
 
+bool different_color(int a, int b)
+{
+  return (abs((a-b)) > thresh);
+}
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -147,10 +154,10 @@ void setup() {
 
   for (int i = 0; i < COLORSETUP; ++i)
   {
-    colorSetup1 += analogRead(PIN_COLORSENSE1);
-    colorSetup2 += analogRead(PIN_COLORSENSE2);
-    colorSetup3 += analogRead(PIN_COLORSENSE3);
-    colorSetup4 += analogRead(PIN_COLORSENSE4);
+    sensor1 += analogRead(PIN_COLORSENSE1);
+    sensor2 += analogRead(PIN_COLORSENSE2);
+    sensor3 += analogRead(PIN_COLORSENSE3);
+    sensor4 += analogRead(PIN_COLORSENSE4);
   }
 
   for (int j = 0; j < NUM_AVG; j++)
@@ -166,10 +173,10 @@ void setup() {
   }
 
 
-  homeColor1 = colorSetup1 / COLORSETUP;
-  homeColor2 = colorSetup2 / COLORSETUP;
-  homeColor3 = colorSetup3 / COLORSETUP;
-  homeColor4 = colorSetup4 / COLORSETUP;
+  homeColor1 = sensor1 / COLORSETUP;
+  homeColor2 = sensor2 / COLORSETUP;
+  homeColor3 = sensor3 / COLORSETUP;
+  homeColor4 = sensor4 / COLORSETUP;
   /**
   pingTimer[0] = millis() + 75;
   pingTimer[1] = pingTimer[0] + PING_INTERVAL;
@@ -197,9 +204,19 @@ void setup() {
   Serial.print(initialDistL);
   Serial.print("Right initial dist: ");
   Serial.println(initialDistR);
+  
     
 **/
-//  driveForward(100);
+
+  Serial.print("Sensor 1: ");
+  Serial.print(homeColor1);
+  Serial.print(" Sensor 2: ");
+  Serial.print(homeColor2);
+  Serial.print(" Sensor 3: ");
+  Serial.print(homeColor3);
+  Serial.print(" Sensor 4: ");
+  Serial.println(homeColor4);
+// driveForward(100);
 
   
   turnTime = calibrateTurn();
@@ -215,7 +232,7 @@ void setup() {
   driveStop();
   delay(100);
 
-    plannedPath();
+   plannedPath();
   //Serial.print("Driving");
   //s.write(BIN_INVERTED);
 }
@@ -223,13 +240,12 @@ void setup() {
 
 int calibrateTurn()
 {
-   int time =0;
+   int time = millis();
    driveRight(100);
    int count =0;
    while(count < 6)
    {
      delay(1);
-     time+=18;
     int leftDist = sonar[SONAR_L].ping_cm(); 
         int rightDist = sonar[SONAR_R].ping_cm(); 
         Serial.print("Left\t");
@@ -246,6 +262,7 @@ int calibrateTurn()
     }
 
    }
+   time = millis() - time;
    Serial.println(time);
    driveStop();
    return time;
@@ -272,7 +289,7 @@ void loop() {
   }
 */
 //  driveForward(100);
-
+/*
     int sensor1 = analogRead(PIN_COLORSENSE1);
       int sensor2 = analogRead(PIN_COLORSENSE2);
       int sensor3 = analogRead(PIN_COLORSENSE3);
@@ -285,7 +302,7 @@ void loop() {
       Serial.print(sensor3);
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
-      
+      */
 }
 
 
@@ -315,10 +332,13 @@ int duration(int action)
 
 void plannedPath()
 {
+  Serial.println("Plan path");
   int actionCounter = 0;
 
   int forwardTime = 1400;
-  turnTime *=.95;
+  int startTime;
+
+  //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
   int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, RIGHT, DUMP, FORWARD, FORWARD,FORWARD,FORWARD,FORWARD,FORWARD,FORWARD, RIGHT, FORWARD, FORWARD, STOP, LEFT, FORWARD, FORWARD, FORWARD, RIGHT, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, DUMP};
 
@@ -329,10 +349,20 @@ void plannedPath()
  
     for (int i =0; i< NUM_ACTIONS; i++)
     {
-      /**
+      startTime = millis();
+      if(actions[i] != FORWARD){
+        while(millis() - startTime < duration(actions[i])){
+          doAction(actions[i]);
+          delay(5);
+        }
+      }
+      else {
+        
+      Serial.print("Action: ");
+      Serial.println(i);
        int startVals[4]= {0,0,0,0}; 
        int startColors[4]= {0,0,0,0}; 
-       for (int j = 0; j < 1; j++)
+       for (int j = 0; j < NUM_AVG; j++)
        {
         startVals[0] += analogRead(PIN_COLORSENSE1);
         startVals[1] += analogRead(PIN_COLORSENSE2);
@@ -342,21 +372,69 @@ void plannedPath()
        int change_once = 0;
        for(int j=0 ; j<4; j++)
        {
-         startColors[j] = color(startVals[j]/COLORSETUP); 
+         //startColors[j] = color(startVals[j]/NUM_AVG); 
+         startColors[j] = startVals[j]/NUM_AVG;
        }
        int fix = 0;
-       **/
-      for (int j = duration(actions[i]); j > 0; j--)
-      {
-        doAction(actions[i]);
-        delay(1);
-      }
+       
+      while(millis() - startTime < duration(actions[i]))
+        {
+          Serial.print("Action: ");
+          Serial.println(i);
+          doAction(actions[i]);
+          sensor1 = analogRead(PIN_COLORSENSE1);
+          //colors[0] = color(sensor1);
+          sensor2 = analogRead(PIN_COLORSENSE2);
+          //colors[1]  = color(sensor2);
+          sensor3 = analogRead(PIN_COLORSENSE3);
+          //colors[2]  = color(sensor3);
+          sensor4 = analogRead(PIN_COLORSENSE4);
+          //colors[3]  = color(sensor4);
+          int count = 0;
+          bool change_once = false;
+          Serial.print("Start 1: ");
+          Serial.print(startColors[0]);      
+                Serial.print("\tStart 2: ");
+          Serial.print(startColors[1]);
+                Serial.print("\tStart 3: ");
+          Serial.print(startColors[2]);
+                Serial.print("\tStart 4: ");
+          Serial.println(startColors[3]);
+          Serial.print("Sensor 1: ");
+        Serial.print(sensor1);      
+              Serial.print("\tSensor 2: ");
+        Serial.print(sensor2);
+              Serial.print("\tSensor 3: ");
+        Serial.print(sensor3);
+              Serial.print("\tSensor 4: ");
+        Serial.println(sensor4);
+          Serial.println(different_color(startColors[1], sensor2));
+          Serial.println(different_color(startColors[3], sensor4));
+          if (different_color(startColors[0], sensor1))
+          {
+           count ++; 
+          }
+          
+           //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
+          if(different_color(startColors[2], sensor3))
+          {
+           count ++; 
+          }
+          
+          if(count == 2 && !change_once && actions[i] == FORWARD){
+            change_once = true;
+            startTime = millis() - duration(actions[i]);
+          }
+          
+          delay(1);
+        }
        driveStop();
-    delay(1000);
+      delay(1000);
+      }
   }
   driveStop();
   s.write(BIN_INVERTED);     
-        /**
+        /*
         int colors[4];
         int sensor1 = analogRead(PIN_COLORSENSE1);
         colors[0] = color(sensor1);
@@ -395,6 +473,7 @@ void plannedPath()
         Serial.print(sensor3);
         Serial.print("\tColor 4: \t");
         Serial.print(sensor4);
+        /*
         Serial.print("SColor 1: \t");
         Serial.print(startVals[0]);      
         Serial.print("\tSColor 2: \t");
@@ -404,7 +483,7 @@ void plannedPath()
         Serial.print("\tSColor 4: \t");
         Serial.println(startVals[3]);
 **/
-/**
+/*
         if ( (startColors[1] >= sensor2 && (100*(startColors[1]-sensor2))/startColors[1] < thresh)  || (startColors[1] < sensor2 && (100*(sensor2 - startColors[1]))/sensor2 < thresh))
         {
          count ++; 
@@ -414,9 +493,9 @@ void plannedPath()
         {
          count ++; 
         }
-        
-        for(int k =0; k<4; k++)
-        {
+        */
+       // for(int k =0; k<4; k++)
+        //{
           /**
           if(startColors[i]!=colors[i])
           {
