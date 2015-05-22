@@ -395,7 +395,6 @@ void plannedPath()
         startVals[2] += analogRead(PIN_COLORSENSE3);
         startVals[3] += analogRead(PIN_COLORSENSE4);
        }
-       int change_once = 0;
        for(int j=0 ; j<4; j++)
        {
          //startColors[j] = color(startVals[j]/NUM_AVG); 
@@ -450,7 +449,7 @@ void plannedPath()
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
             change_once = true;
-            startTime = millis() - duration(actions[i]) + 75;
+            startTime = millis() - duration(actions[i]) + 50;
             //startTime -= 500;
             //modifier += 500;
           }
