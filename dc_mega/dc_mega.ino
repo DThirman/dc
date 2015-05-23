@@ -409,7 +409,7 @@ int duration(int action)
         return 3000;
       break;
       case DEDREKON:
-        return 100;
+        return 400;
       break;
     case FORWARD_SLIGHT:
         return 50;
@@ -456,7 +456,7 @@ void plannedPath()
 //int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, FORWARD, STOP, LEFT, STOP, BACK, STOP,
 //                                FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, RIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
 int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, STOP, STOP, LEFT, STOP, BACK, STOP, DEDREKON, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, FORWARD, STOP,
-                                RIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, BACK, STOP, DUMP, STOP, FORWARD_SLIGHT, FORWARD, STOP, DUMP_UP, STOP, FORWARD, FORWARD, STOP, ORIGHT, STOP, BACK, STOP, FORWARD_SLIGHT, 
+                                ORIGHT, STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, BACK, STOP, DUMP, STOP, FORWARD_SLIGHT, FORWARD, STOP, DUMP_UP, STOP, FORWARD, FORWARD, STOP, ORIGHT, STOP, BACK, STOP, FORWARD_SLIGHT, 
                                 FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, STOP, ORIGHT, STOP, BACK, STOP, DUMP, FORWARD, STOP, DUMP_UP, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, DUMP};
   
 //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
@@ -658,7 +658,7 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, STOP, 
             }
           }
           
-          if(count == 2 && !change_once && actions[i] == FORWARD){
+          if(count == 2 && !change_once && actions[i] == FORWARD && millis() - startTime > 750){
             Serial.println("Change once");
               driveStop();
               change_once = true;
@@ -1236,6 +1236,8 @@ void emergencyDump()
   if(!dumped){
     doAction(DUMP);
   }
+  
+  driveStop();
 }
 
 void gameOverMan()
