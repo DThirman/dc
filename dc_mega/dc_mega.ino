@@ -242,13 +242,13 @@ void setup() {
   Serial.print("Start corner: ");
   Serial.println(startCorner);
   
-  turnTime = calibrateTurn();
+  //turnTime = calibrateTurn();
   delay(100);
 
   if(startCorner == PURPLESTART){
-    driveLeft(75);
+    //driveLeft(75);
   } else {
-    driveRight(75);
+    //driveRight(75);
   }
 
   delay(turnTime);
@@ -259,7 +259,7 @@ void setup() {
    **/
   Serial.print("Driving");
   //s.write(BIN_INVERTED);
-  zigZagPath();
+  //zigZagPath();
 }
 
 int findStartCorner()
@@ -363,7 +363,7 @@ void loop() {
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
       */
-      //driveForwardWall(100);
+      driveForwardWall(80);
       
       /*
       bool diff1 = different_color(homeColor1, sensor1);
@@ -644,53 +644,81 @@ void driveForwardWall(int speed)
   digitalWrite(PIN_RIGHT_DIR2, 1);
   
   if(leftDist > 43 || rightDist > 43){
+    Serial.println("Both forward, branch 1");
     analogWrite(PIN_LEFT_PWM, vel);
     analogWrite(PIN_RIGHT_PWM, vel);
-  } else {
+  } else if(leftStopped && rightStopped){
+    if(leftDist < rightDist - 3){
+      digitalWrite(PIN_LEFT_DIR1, 0);
+      digitalWrite(PIN_LEFT_DIR2, 1);
+      analogWrite(PIN_LEFT_PWM, 35);
+    } else if(rightDist < leftDist - 3){
+      digitalWrite(PIN_RIGHT_DIR1, 0); //kevin
+      digitalWrite(PIN_RIGHT_DIR2, 1);
+      analogWrite(PIN_RIGHT_PWM, 35);
+    }
+  
+  }else {
     if(leftDist > 34){
+      Serial.println("Left forward, greater than 34");
       analogWrite(PIN_LEFT_PWM, vel);
     } else if(leftStopped){
+      Serial.println("Left stopped");
       analogWrite(PIN_LEFT_PWM, 0);
     } else if(rightStopped){
-      if(leftDist > rightDist){
-        analogWrite(PIN_LEFT_PWM, 35);
-      } else if(leftDist < rightDist){
-        digitalWrite(PIN_LEFT_DIR1, 0);
-        digitalWrite(PIN_LEFT_DIR2, 1);
-        analogWrite(PIN_LEFT_PWM, 35);
-      } else {
+      if(abs((leftDist-rightDist)) < 4){
+        Serial.println("Right stopped, left equal, stop now");
         leftStopped = true;
         analogWrite(PIN_LEFT_PWM, 0);
       }
+      else if(leftDist > rightDist){
+        Serial.println("Right stopped, left go forward");
+        analogWrite(PIN_LEFT_PWM, 35);
+      } else if(leftDist < rightDist){
+        Serial.println("Right stopped ,left go backward");
+        digitalWrite(PIN_LEFT_DIR1, 0);
+        digitalWrite(PIN_LEFT_DIR2, 1);
+        analogWrite(PIN_LEFT_PWM, 35);
+      }
     } else if(leftDist < 27){
+      Serial.println("Left backward, less than 27");
       digitalWrite(PIN_LEFT_DIR1, 0);
       digitalWrite(PIN_LEFT_DIR2, 1);
       analogWrite(PIN_LEFT_PWM, 35);
     } else {
+      Serial.println("Left stop now, between 27 and 34");
       analogWrite(PIN_LEFT_PWM, 0);
       leftStopped = true;
       stopDist = leftDist;
     }
     if(rightDist > 34){
+      Serial.println("Right forward, greater than 34");
       analogWrite(PIN_RIGHT_PWM, vel);
     } else if(rightStopped){
+      Serial.println("Right stopped");
       analogWrite(PIN_RIGHT_PWM, 0);
     } else if(leftStopped){
-      if(rightDist > leftDist){
-        analogWrite(PIN_RIGHT_PWM, 35);
-      } else if(rightDist < leftDist){
-        digitalWrite(PIN_RIGHT_DIR1, 1);
-        digitalWrite(PIN_RIGHT_DIR2, 0);
-        analogWrite(PIN_RIGHT_PWM, 35);
-      } else {
+      if(abs((rightDist-leftDist)) < 4){
+        Serial.println("Left stopped, right equal, stop now");
         rightStopped = true;
         analogWrite(PIN_RIGHT_PWM, 0);
       }
+      else if(rightDist > leftDist){
+        Serial.println("Left stopped, right go forward");
+        analogWrite(PIN_RIGHT_PWM, 35);
+      } else if(rightDist < leftDist){
+        Serial.println("Left stopped ,right go backward");
+        digitalWrite(PIN_RIGHT_DIR1, 0); //kevin
+        digitalWrite(PIN_RIGHT_DIR2, 1);
+        analogWrite(PIN_RIGHT_PWM, 35);
+      }
     } else if(rightDist < 27){
-      digitalWrite(PIN_RIGHT_DIR1, 1);
-      digitalWrite(PIN_RIGHT_DIR2, 0);
+      Serial.println("Right backward, less than 27");
+      digitalWrite(PIN_RIGHT_DIR1, 0); //kevin
+      digitalWrite(PIN_RIGHT_DIR2, 1);
       analogWrite(PIN_RIGHT_PWM, 35);
     } else {
+      Serial.println("Right stop now, between 27 and 34");
       analogWrite(PIN_RIGHT_PWM, 0);
       rightStopped = true;
       stopDist = rightDist;
