@@ -6,7 +6,7 @@
 #define COLORSETUP 100
 
 
-//Define Pinouts
+//Define Pinouts 
 #define PIN_TRIGGER_R  8
 #define PIN_ECHO_R     9
 
