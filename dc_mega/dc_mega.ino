@@ -61,12 +61,13 @@
 #define CALIBRATE_OPP_COLOR 8
 #define OLEFT 9
 #define ORIGHT 10
+#define DEDREKON 12
 
 //Parameters
 #define NUM_AVG 7
 #define MAX_BLOCKS 2
 
-#define NUM_ACTIONS 44
+#define NUM_ACTIONS 80
 
 #define PURPLE 0
 #define WHITE 1
@@ -407,6 +408,9 @@ int duration(int action)
     case FORWARD:
         return 3000;
       break;
+      case DEDREKON:
+        return 100;
+      break;
     case FORWARD_SLIGHT:
         return 50;
       break;
@@ -448,10 +452,14 @@ void plannedPath()
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
  /*int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD,
                                 STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, LEFT, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};*/
-                                                                     //^stops here, stop.
-int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, FORWARD, STOP, LEFT, STOP, BACK, STOP,
-                                FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, RIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
-  //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
+       //old path                                                              //^stops here, stop.
+//int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, FORWARD, STOP, LEFT, STOP, BACK, STOP,
+//                                FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, RIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
+int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, STOP, STOP, LEFT, STOP, BACK, STOP, DEDREKON, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, DUMP, STOP, FORWARD, STOP,
+                                RIGHT, STOP, DUMP_UP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, FORWARD, STOP, ORIGHT, STOP, BACK, STOP, FORWARD_SLIGHT, 
+                                FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD, STOP, ORIGHT, STOP, BACK, STOP, DUMP, FORWARD, STOP, DUMP_UP, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, DUMP};
+  
+//int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
 //  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
 
@@ -460,7 +468,7 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWAR
     {
       bool change_once = false;
       startTime = millis();
-      if(actions[i] == BACK || actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL || actions[i] == OLEFT || actions[i] == ORIGHT || actions[i] == DUMP_UP){
+      if(actions[i] == BACK || actions[i] == DEDREKON || actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL || actions[i] == OLEFT || actions[i] == ORIGHT || actions[i] == DUMP_UP){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
@@ -682,6 +690,9 @@ void doAction(int action)
   {
     case FORWARD:
       driveForward(80);
+      break;
+      case DEDREKON:
+      driveForward(60);
       break;
     case FORWARD_WALL:
       driveForwardWall(80);
