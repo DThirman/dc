@@ -242,21 +242,21 @@ void setup() {
   Serial.print("Start corner: ");
   Serial.println(startCorner);
   
-  //turnTime = calibrateTurn();
+  turnTime = calibrateTurn();
   delay(100);
 
   if(startCorner == PURPLESTART){
-    //driveLeft(75);
+    driveLeft(75);
   } else {
-    //driveRight(75);
+    driveRight(75);
   }
 
   delay(turnTime);
     driveStop();
   delay(100);
-/**
+
    plannedPath();
-   **/
+
   Serial.print("Driving");
   //s.write(BIN_INVERTED);
   //zigZagPath();
@@ -363,7 +363,7 @@ void loop() {
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
       */
-      driveForwardWall(80);
+      //driveForwardWall(80);
       
       /*
       bool diff1 = different_color(homeColor1, sensor1);
@@ -397,7 +397,7 @@ int duration(int action)
       return turnTime;
       break;
     case RIGHT:
-      return turnTime*.95;
+      return turnTime;
       break;
     case BACK:
       return 1000;
@@ -420,16 +420,9 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, 
-                                FORWARD, FORWARD, FORWARD, LEFT, 
-                                FORWARD_WALL, STOP, LEFT, STOP, 
-                                FORWARD, FORWARD, FORWARD, STOP, 
-                                LEFT, STOP, DUMP, STOP, FORWARD, STOP, LEFT, FORWARD,
-                                RIGHT, FORWARD, DUMP_UP, FORWARD,
-                                //FORWARD, RIGHT, FORWARD, FORWARD, 
-                                STOP, LEFT, FORWARD, FORWARD, FORWARD, 
-                                RIGHT, FORWARD, STOP, RIGHT, STOP, 
-                                FORWARD, FORWARD, STOP, DUMP};
+ int actions [NUM_ACTIONS] = {FORWARD, FORWARD, FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
+                                STOP, FORWARD, FORWARD, FORWARD_WALL, STOP, RIGHT, STOP, FORWARD, STOP, RIGHT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD_WALL};
+                                 
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
@@ -855,8 +848,12 @@ void zigZagPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
-                                STOP, FORWARD_WALL, STOP, RIGHT, STOP, RIGHT, STOP, BACK, STOP, FORWARD_WALL};
+  
+  //-non-dedrekoned
+  //int actions [NUM_ACTIONS] = {FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
+  //                              STOP, FORWARD_WALL, STOP, RIGHT, STOP, RIGHT, STOP, BACK, STOP, FORWARD_WALL};
+  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, FORWARD, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
+                                STOP, FORWARD, FORWARD, FORWARD, STOP, RIGHT, STOP, RIGHT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD};
                                  
  
 
