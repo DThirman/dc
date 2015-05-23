@@ -630,27 +630,39 @@ void driveForwardWall(int speed)
   Serial.print("\tSensor 2 r: \t");
   Serial.println(rightDist);
   
+    digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
+  
   if(leftDist > 40 || rightDist > 40){
     analogWrite(PIN_LEFT_PWM, vel);
     analogWrite(PIN_RIGHT_PWM, vel);
   } else {
-    if(leftDist > 27){
+    if(leftDist > 30){
       analogWrite(PIN_LEFT_PWM, vel);
-    } else {
+    } else if (leftDist > 15 && leftDist < 27) {
+       digitalWrite(PIN_LEFT_DIR1, 0);
+       digitalWrite(PIN_LEFT_DIR2, 1);
+       analogWrite(PIN_LEFT_PWM, 35);
+    }
+     else {
       analogWrite(PIN_LEFT_PWM, 0);
     }
-    if(rightDist > 27){
+    if(rightDist > 30){
       analogWrite(PIN_RIGHT_PWM, vel);
-    } else {
+    } else if (rightDist > 15 && rightDist < 27) {
+      digitalWrite(PIN_RIGHT_DIR1, 1);
+      digitalWrite(PIN_RIGHT_DIR2, 0);
+      analogWrite(PIN_RIGHT_PWM, 35); 
+    } 
+    else {
       analogWrite(PIN_RIGHT_PWM, 0);
     }
   }
   
 
-  digitalWrite(PIN_LEFT_DIR1, 1);
-  digitalWrite(PIN_RIGHT_DIR1, 0);
-   digitalWrite(PIN_LEFT_DIR2, 0);
-  digitalWrite(PIN_RIGHT_DIR2, 1);
+
 }
 
 void driveLeft(int speed)
