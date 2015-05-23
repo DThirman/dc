@@ -150,7 +150,7 @@ bool different_color(int a, int b)
 
 bool same_color(int a, int b)
 {
-  return (abs((a-b)) < 5);
+  return (abs((a-b)) < 10);
 }
 
 
@@ -242,24 +242,24 @@ void setup() {
   Serial.print("Start corner: ");
   Serial.println(startCorner);
   
-  //turnTime = calibrateTurn();
+  turnTime = calibrateTurn();
   delay(100);
 
   if(startCorner == PURPLESTART){
-    //driveLeft(75);
+    driveLeft(75);
   } else {
-    //driveRight(75);
+    driveRight(75);
   }
 
-  //delay(turnTime);
+  delay(turnTime);
     driveStop();
   delay(100);
 /**
    plannedPath();
    **/
-  //Serial.print("Driving");
+  Serial.print("Driving");
   //s.write(BIN_INVERTED);
-  //zigZagPath();
+  zigZagPath();
 }
 
 int findStartCorner()
@@ -363,7 +363,7 @@ void loop() {
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
       */
-      driveForwardWall(100);
+      //driveForwardWall(100);
       
       /*
       bool diff1 = different_color(homeColor1, sensor1);
@@ -391,16 +391,16 @@ int duration(int action)
         return 1400;
       break;
     case FORWARD_WALL:
-        return 5000;
+        return 8000;
     break;
     case LEFT:
-      return turnTime*.92;
+      return turnTime;
       break;
     case RIGHT:
-      return turnTime*.92;
+      return turnTime*.95;
       break;
     case BACK:
-      return 1400;
+      return 1000;
       break;
     case STOP:
       return 100;
@@ -643,11 +643,11 @@ void driveForwardWall(int speed)
    digitalWrite(PIN_LEFT_DIR2, 0);
   digitalWrite(PIN_RIGHT_DIR2, 1);
   
-  if(leftDist > 40 || rightDist > 40){
+  if(leftDist > 43 || rightDist > 43){
     analogWrite(PIN_LEFT_PWM, vel);
     analogWrite(PIN_RIGHT_PWM, vel);
   } else {
-    if(leftDist > 28){
+    if(leftDist > 34){
       analogWrite(PIN_LEFT_PWM, vel);
     } else if(leftStopped){
       analogWrite(PIN_LEFT_PWM, 0);
@@ -662,7 +662,7 @@ void driveForwardWall(int speed)
         leftStopped = true;
         analogWrite(PIN_LEFT_PWM, 0);
       }
-    } else if(leftDist < 24){
+    } else if(leftDist < 27){
       digitalWrite(PIN_LEFT_DIR1, 0);
       digitalWrite(PIN_LEFT_DIR2, 1);
       analogWrite(PIN_LEFT_PWM, 35);
@@ -671,7 +671,7 @@ void driveForwardWall(int speed)
       leftStopped = true;
       stopDist = leftDist;
     }
-    if(rightDist > 28){
+    if(rightDist > 34){
       analogWrite(PIN_RIGHT_PWM, vel);
     } else if(rightStopped){
       analogWrite(PIN_RIGHT_PWM, 0);
@@ -686,7 +686,7 @@ void driveForwardWall(int speed)
         rightStopped = true;
         analogWrite(PIN_RIGHT_PWM, 0);
       }
-    } else if(rightDist < 24){
+    } else if(rightDist < 27){
       digitalWrite(PIN_RIGHT_DIR1, 1);
       digitalWrite(PIN_RIGHT_DIR2, 0);
       analogWrite(PIN_RIGHT_PWM, 35);
@@ -827,8 +827,8 @@ void zigZagPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD,
-                                STOP, LEFT, STOP, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD};
+  int actions [NUM_ACTIONS] = {FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
+                                STOP, FORWARD_WALL, STOP, RIGHT, STOP, RIGHT, STOP, BACK, STOP, FORWARD_WALL};
                                  
  
 
@@ -839,7 +839,8 @@ void zigZagPath()
  
     for (int i =0; i< NUM_ACTIONS; i++)
     {
-      
+      leftStopped = false;
+      rightStopped = false;
       bool change_once = false;
       startTime = millis();
       if(actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL){
@@ -932,8 +933,8 @@ void zigZagPath()
           }
           
            //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-          if(different_color(oppVals[2], sensor3))
-          {
+          if(same_color(oppVals[2], sensor3))
+          { //kevin told me to change this
            count ++; 
           }
           
