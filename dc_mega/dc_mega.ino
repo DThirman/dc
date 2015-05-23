@@ -87,6 +87,8 @@ int homeColor[4] = {0,0,0,0};
 
 int oppositeColor[4] = {0,0,0,0};
 
+int colorThresh[4] = {0,0,0,0};
+
 int startCorner;
 
 int sensor1 = 0;
@@ -124,6 +126,8 @@ bool leftStopped = false;
 bool rightStopped = false;
 int stopDist = 0;
 
+bool oppositeCalibrated = false;
+
 int color(int val, int sensor)
 {
   /*
@@ -136,9 +140,9 @@ int color(int val, int sensor)
      return 0;
    }
    */
-   if(same_color(val, homeColor[sensor])){
+   if(same_color(val, homeColor[sensor], sensor)){
      return 1;
-   } else if(same_color(val, oppositeColor[sensor])){
+   } else if(same_color(val, oppositeColor[sensor], sensor)){
      return 0;
    } else {
      return -1;
@@ -150,9 +154,9 @@ bool different_color(int a, int b)
   return (abs((a-b)) > thresh);
 }
 
-bool same_color(int a, int b)
+bool same_color(int a, int b, int sensor)
 {
-  return (abs((a-b)) < 10);
+  return (abs((a-b)) < colorThresh[sensor]);
 }
 
 
@@ -428,8 +432,8 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
- int actions [NUM_ACTIONS] = {FORWARD, FORWARD, FORWARD, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
-                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};
+ int actions [NUM_ACTIONS] = {FORWARD, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP/*, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
+                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP*/};
                                  
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
@@ -441,11 +445,46 @@ void plannedPath()
     {
       bool change_once = false;
       startTime = millis();
-      if(actions[i] != (FORWARD || FORWARD_WALL)){
+      if(actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
         }
+      } else if (actions[i] == CALIBRATE_OPP_COLOR)
+      {
+        int calibrate[4] = {0,0,0,0};
+        for (uint8_t j = 0; j < COLORSETUP; ++j)
+        {
+          calibrate[0] += analogRead(PIN_COLORSENSE1);
+          calibrate[1] += analogRead(PIN_COLORSENSE2);
+          calibrate[2] += analogRead(PIN_COLORSENSE3);
+          calibrate[3] += analogRead(PIN_COLORSENSE4);
+        }
+        oppositeColor[0] = calibrate[0]/COLORSETUP;
+        oppositeColor[1] = calibrate[1]/COLORSETUP;
+        oppositeColor[2] = calibrate[2]/COLORSETUP;
+        oppositeColor[3] = calibrate[3]/COLORSETUP;
+        colorThresh[0] = abs((homeColor[0]-oppositeColor[0]))/10;
+        colorThresh[1] = abs((homeColor[1]-oppositeColor[1]))/10;
+        colorThresh[2] = abs((homeColor[2]-oppositeColor[2]))/10;
+        colorThresh[3] = abs((homeColor[3]-oppositeColor[3]))/10;
+        oppositeCalibrated = true;
+        Serial.print("Home 1: ");
+        Serial.print(homeColor[0]);
+        Serial.print(" Home 2: ");
+        Serial.print(homeColor[1]);
+        Serial.print(" Home 3: ");
+        Serial.print(homeColor[2]);
+        Serial.print(" Home 4: ");
+        Serial.println(homeColor[3]);
+        Serial.print("Opp 1: ");
+        Serial.print(oppositeColor[0]);
+        Serial.print(" Opp 2: ");
+        Serial.print(oppositeColor[1]);
+        Serial.print(" Opp 3: ");
+        Serial.print(oppositeColor[2]);
+        Serial.print(" Opp 4: ");
+        Serial.println(oppositeColor[3]);
       } /*else if (actions[i] == FORWARD_WALL)
       {
         while(millis() - startTime < duration(actions[i])){
@@ -460,6 +499,7 @@ void plannedPath()
       Serial.println(i);
        int startVals[4]= {0,0,0,0}; 
        int startColors[4]= {0,0,0,0}; 
+       int oppVals[4] = {0,0,0,0};
        for (int j = 0; j < NUM_AVG; j++)
        {
         startVals[0] += analogRead(PIN_COLORSENSE1);
@@ -470,7 +510,15 @@ void plannedPath()
        for(int j=0 ; j<4; j++)
        {
          //startColors[j] = color(startVals[j]/NUM_AVG); 
-         startColors[j] = startVals[j]/NUM_AVG;
+         startColors[j] = color(startVals[j]/NUM_AVG, j);
+         startVals[j] = startVals[j]/NUM_AVG;
+       }
+       for(int j = 0; j < 4; j++){
+         if(startColors[j] == 1){
+           oppVals[j] = oppositeColor[j];
+         } else if(startColors[j] == 0){
+           oppVals[j] = homeColor[j];
+         }
        }
        int fix = 0;
        int modifier = 0;
@@ -500,6 +548,14 @@ void plannedPath()
           Serial.print(startColors[2]);
                 Serial.print("\tStart 4: ");
           Serial.println(startColors[3]);
+          Serial.print("Start 1 val: ");
+          Serial.print(startVals[0]);      
+                Serial.print("\tStart 2 val: ");
+          Serial.print(startVals[1]);
+                Serial.print("\tStart 3 val: ");
+          Serial.print(startVals[2]);
+                Serial.print("\tStart 4 val: ");
+          Serial.println(startVals[3]);
           Serial.print("Sensor 1: ");
         Serial.print(sensor1);      
               Serial.print("\tSensor 2: ");
@@ -510,21 +566,35 @@ void plannedPath()
         Serial.println(sensor4);
           Serial.println(different_color(startColors[1], sensor2));
           Serial.println(different_color(startColors[3], sensor4));
-          if (different_color(startColors[0], sensor1))
-          {
-           count ++; 
-          }
-          
-           //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-          if(different_color(startColors[2], sensor3))
-          {
-           count ++; 
+          if(!oppositeCalibrated){
+            if (different_color(startVals[0], sensor1))
+            {
+             count ++; 
+            }
+            
+             //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
+            if(different_color(startVals[2], sensor3))
+            {
+             count ++; 
+            }
+          } else {
+            if (same_color(oppVals[0], sensor1, 0))
+            {
+             count ++; 
+            }
+            
+             //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
+            if(same_color(oppVals[2], sensor3, 2))
+            { //kevin told me to change this
+             count ++; 
+            }
           }
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
+            Serial.println("Change once");
               change_once = true;
 //            startTime = millis() - duration(actions[i]) + 50;
-              dur = millis()-startTime+50;
+              dur = 50;
               startTime = millis();
 
             //startTime -= 500;
@@ -974,13 +1044,13 @@ void zigZagPath()
         Serial.println(sensor4);
           Serial.println(different_color(startColors[1], sensor2));
           Serial.println(different_color(startColors[3], sensor4));
-          if (same_color(oppVals[0], sensor1))
+          if (same_color(oppVals[0], sensor1, 0))
           {
            count ++; 
           }
           
            //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-          if(same_color(oppVals[2], sensor3))
+          if(same_color(oppVals[2], sensor3, 2))
           { //kevin told me to change this
            count ++; 
           }
