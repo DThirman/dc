@@ -57,6 +57,7 @@
 #define STOP 4
 #define DUMP 5
 #define DUMP_UP 7
+#define CALIBRATE_OPP_COLOR 8
 
 //Parameters
 #define NUM_AVG 7
@@ -73,24 +74,23 @@
 #define SONAR_SR 2
 #define SONAR_SL 3
 
+#define PURPLESTART 0//the purple corner (white start zone)
+#define WHITESTART 1 //the white corner (purple start zone) 
+
 int robotState = 0;
 
 
 //Define Global Vars
-int homeColor1 = 0; //Formerly BR
-int homeColor2 = 0; //Formerly BL
-int homeColor3 = 0; //Formerly TR
-int homeColor4 = 0; //Formerly TL
+int homeColor[4] = {0,0,0,0};
+
+int oppositeColor[4] = {0,0,0,0};
+
+int startCorner;
 
 int sensor1 = 0;
 int sensor2 = 0;
 int sensor3 = 0;
 int sensor4 = 0;
-
-int colorArr1[NUM_AVG];
-int colorArr2[NUM_AVG];
-int colorArr3[NUM_AVG];
-int colorArr4[NUM_AVG];
 
 
 int frontLaserArr[NUM_AVG];
@@ -104,10 +104,6 @@ int blockCount = 0;
 int prevFrontVal = 0;
 int prevBackVal = 0;
 
-unsigned long pingTimer[SONAR_NUM];
-int cm[SONAR_NUM][NUM_AVG];
-uint8_t currentSensor = 0;
-
 int turnTime = 0;
 int thresh = 35;
 
@@ -120,11 +116,14 @@ NewPing sonar[SONAR_NUM] = {
   NewPing(PIN_TRIGGER_SL, PIN_ECHO_SL, MAX_DISTANCE)
 };
 
+int cm[SONAR_NUM][NUM_AVG];
+
 int initialDistL;
 int initialDistR;
 
-int color(int val)
+int color(int val, int sensor)
 {
+  /*
    if(val>100)
    {
      return 1;
@@ -133,11 +132,24 @@ int color(int val)
    {
      return 0;
    }
+   */
+   if(same_color(val, homeColor[sensor])){
+     return 1;
+   } else if(same_color(val, oppositeColor[sensor])){
+     return 0;
+   } else {
+     return -1;
+   }
 }
 
 bool different_color(int a, int b)
 {
   return (abs((a-b)) > thresh);
+}
+
+bool same_color(int a, int b)
+{
+  return (abs((a-b)) < 5);
 }
 
 
@@ -168,30 +180,27 @@ void setup() {
 
   for (int j = 0; j < NUM_AVG; j++)
   {
-    //Initialize Moving Average arrays to zero
-    colorArr1[j] = 0;
-    colorArr2[j] = 0;
-    colorArr3[j] = 0;
-    colorArr4[j] = 0;
 
     frontLaserArr[j] = 0;
     backBreakBeamArr[j] = 0;
   }
 
-
-  homeColor1 = sensor1 / COLORSETUP;
-  homeColor2 = sensor2 / COLORSETUP;
-  homeColor3 = sensor3 / COLORSETUP;
-  homeColor4 = sensor4 / COLORSETUP;
+  
+  homeColor[0] = sensor1 / COLORSETUP;
+  homeColor[1] = sensor2 / COLORSETUP;
+  homeColor[2] = sensor3 / COLORSETUP;
+  homeColor[3] = sensor4 / COLORSETUP;
   /**
   pingTimer[0] = millis() + 75;
   pingTimer[1] = pingTimer[0] + PING_INTERVAL;
-  
+  */
   Serial.println("Starting sonar initialization");
   
   for(uint8_t i = 0; i < NUM_AVG; i++){
     cm[SONAR_L][i] = 0;
     cm[SONAR_R][i] = 0;
+    cm[SONAR_SL][i] = 0;
+    cm[SONAR_SR][i] = 0;
   }
   
   for(uint8_t i = 0; i < NUM_AVG; i++){
@@ -201,11 +210,12 @@ void setup() {
     cm[SONAR_L][i] = uS / US_ROUNDTRIP_CM;
     uS = sonar[SONAR_R].ping();
     cm[SONAR_R][i] = uS / US_ROUNDTRIP_CM;
+    uS = sonar[SONAR_SL].ping();
+    cm[SONAR_SL][i] = uS / US_ROUNDTRIP_CM;
+    uS = sonar[SONAR_SR].ping();
+    cm[SONAR_SR][i] = uS / US_ROUNDTRIP_CM;
   }
-  
-  initialDistL = find_median(cm[SONAR_L]);
-  initialDistR = find_median(cm[SONAR_R]);
-  
+  /**
   Serial.print("Left initial dist: ");
   Serial.print(initialDistL);
   Serial.print("Right initial dist: ");
@@ -215,41 +225,70 @@ void setup() {
 **/
 
   Serial.print("Sensor 1: ");
-  Serial.print(homeColor1);
+  Serial.print(homeColor[0]);
   Serial.print(" Sensor 2: ");
-  Serial.print(homeColor2);
+  Serial.print(homeColor[1]);
   Serial.print(" Sensor 3: ");
-  Serial.print(homeColor3);
+  Serial.print(homeColor[2]);
   Serial.print(" Sensor 4: ");
-  Serial.println(homeColor4);
+  Serial.println(homeColor[3]);
+  
+  
+  
 // driveForward(100);
 
-  /**
+  startCorner = findStartCorner();
+  Serial.print("Start corner: ");
+  Serial.println(startCorner);
+  
   turnTime = calibrateTurn();
   delay(100);
 
-  driveLeft(75);
+  if(startCorner == PURPLESTART){
+    driveLeft(75);
+  } else {
+    driveRight(75);
+  }
 
   delay(turnTime);
     driveStop();
-    delay(100);
-  driveLeft(75);
-  delay(turnTime);
-  driveStop();
   delay(100);
-
+/**
    plannedPath();
    **/
   //Serial.print("Driving");
   //s.write(BIN_INVERTED);
-  zigZagPath();
+  //zigZagPath();
 }
 
+int findStartCorner()
+{
+  int leftDist[NUM_AVG];
+  int rightDist[NUM_AVG];
+  
+  for(uint8_t i = 0; i < NUM_AVG; i++){
+    leftDist[i] = sonar[SONAR_SL].ping() / US_ROUNDTRIP_CM;
+    rightDist[i] = sonar[SONAR_SR].ping() / US_ROUNDTRIP_CM;
+  }
+  
+  int leftMedian = find_median(leftDist);
+  int rightMedian = find_median(rightDist);
+  
+  if(leftMedian != 0 && leftMedian < 20){
+    return WHITESTART;
+  } else if(rightMedian != 0 && rightMedian < 20){
+    return PURPLESTART;
+  }
+}
 
 int calibrateTurn()
 {
    int time = millis();
-   driveRight(75);
+   if(startCorner == PURPLESTART){
+     driveRight(75);
+   } else {
+     driveLeft(75);
+   }
    int count =0;
    while(count < 6)
    {
@@ -300,14 +339,14 @@ void loop() {
     }
   }
   */
-  
+  /*
   int leftDist = sonar[SONAR_L].ping_cm(); 
   int rightDist = sonar[SONAR_R].ping_cm(); 
   Serial.print("Left\t");
   Serial.print(leftDist);
   Serial.print("\tRight\t");
   Serial.println(rightDist);
-
+*/
 //  driveForward(100);
 /*
       int sensor1 = analogRead(PIN_COLORSENSE1);
@@ -322,8 +361,10 @@ void loop() {
       Serial.print(sensor3);
             Serial.print("\tSensor 4: \t");
       Serial.println(sensor4);
+      */
+      driveForwardWall(100);
       
-      
+      /*
       bool diff1 = different_color(homeColor1, sensor1);
       bool diff2 = different_color(homeColor2, sensor2);
       bool diff3 = different_color(homeColor3, sensor3);
@@ -349,7 +390,7 @@ int duration(int action)
         return 1400;
       break;
     case FORWARD_WALL:
-        return 3500;
+        return 5000;
     break;
     case LEFT:
       return turnTime*.92;
@@ -512,10 +553,18 @@ void doAction(int action)
       driveForwardWall(100);
       break;
     case LEFT:
-      driveLeft(75);
+      if(startCorner == PURPLESTART){
+        driveLeft(75);
+      } else {
+        driveRight(75);
+      }
       break;
     case RIGHT:
-      driveRight(75);
+      if(startCorner == PURPLESTART){
+        driveRight(75);
+      } else {
+        driveLeft(75);
+      }
       break;
     case BACK:
       driveBack(100);
@@ -564,33 +613,37 @@ void driveForward(int speed)
 void driveForwardWall(int speed)
 {
   int vel = speed * 2.55;
-
+  int leftDist;
+  int rightDist;
   delay(1);
-  int leftDist = sonar[SONAR_L].ping_cm(); 
-  delay(1);
-  int rightDist = sonar[SONAR_R].ping_cm();
+  //int leftDist = sonar[SONAR_L].ping(); 
+  echoCheck(SONAR_L);
+  delay(33);
+  //int rightDist = sonar[SONAR_R].ping();
+  echoCheck(SONAR_R);
+  
+  leftDist = find_median(cm[SONAR_L]);
+  rightDist = find_median(cm[SONAR_R]);
   
   Serial.print("\nSensor 1 l: \t");
-  Serial.println(leftDist);      
-  Serial.print("\nSensor 2 r: \t");
+  Serial.print(leftDist);      
+  Serial.print("\tSensor 2 r: \t");
   Serial.println(rightDist);
   
-  if (leftDist > 30)
-  {
+  if(leftDist > 40 || rightDist > 40){
     analogWrite(PIN_LEFT_PWM, vel);
-  }
-  else
-  {
-    analogWrite(PIN_LEFT_PWM, 0);
-  }
-  
-  if (rightDist > 30)
-  {
     analogWrite(PIN_RIGHT_PWM, vel);
-  }
-  else
-  {
-    analogWrite(PIN_RIGHT_PWM, 0);
+  } else {
+    if(leftDist > 27){
+      analogWrite(PIN_LEFT_PWM, vel);
+    } else {
+      analogWrite(PIN_LEFT_PWM, 0);
+    }
+    if(rightDist > 27){
+      analogWrite(PIN_RIGHT_PWM, vel);
+    } else {
+      analogWrite(PIN_RIGHT_PWM, 0);
+    }
   }
   
 
@@ -728,16 +781,10 @@ void zigZagPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
-  int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, RIGHT, 
-                                FORWARD, FORWARD, FORWARD, LEFT, 
-                                FORWARD_WALL, STOP, LEFT, STOP, 
-                                FORWARD, FORWARD, FORWARD, STOP, 
-                                LEFT, STOP, DUMP, STOP, FORWARD, STOP, LEFT, FORWARD,
-                                RIGHT, FORWARD, DUMP_UP, FORWARD,
-                                //FORWARD, RIGHT, FORWARD, FORWARD, 
-                                STOP, LEFT, FORWARD, FORWARD, FORWARD, 
-                                RIGHT, FORWARD, STOP, RIGHT, STOP, 
-                                FORWARD, FORWARD, STOP, DUMP};
+  int actions [NUM_ACTIONS] = {FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD,
+                                STOP, LEFT, STOP, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD};
+                                 
+ 
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
@@ -746,27 +793,36 @@ void zigZagPath()
  
     for (int i =0; i< NUM_ACTIONS; i++)
     {
+      
       bool change_once = false;
       startTime = millis();
-      if(actions[i] != (FORWARD || FORWARD_WALL)){
+      if(actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
         }
-      } /*else if (actions[i] == FORWARD_WALL)
+      } else if (actions[i] == CALIBRATE_OPP_COLOR)
       {
-        while(millis() - startTime < duration(actions[i])){
-          doAction(actions[i]);
-          
+        int calibrate[4] = {0,0,0,0};
+        for (uint8_t j = 0; j < COLORSETUP; ++j)
+        {
+          calibrate[0] += analogRead(PIN_COLORSENSE1);
+          calibrate[1] += analogRead(PIN_COLORSENSE2);
+          calibrate[2] += analogRead(PIN_COLORSENSE3);
+          calibrate[3] += analogRead(PIN_COLORSENSE4);
         }
-      }*/
-      
+        oppositeColor[0] = calibrate[0]/COLORSETUP;
+        oppositeColor[1] = calibrate[1]/COLORSETUP;
+        oppositeColor[2] = calibrate[2]/COLORSETUP;
+        oppositeColor[3] = calibrate[3]/COLORSETUP;
+      }
       else {
         
       Serial.print("Action: ");
       Serial.println(i);
        int startVals[4]= {0,0,0,0}; 
        int startColors[4]= {0,0,0,0}; 
+       int oppVals[4] = {0,0,0,0};
        for (int j = 0; j < NUM_AVG; j++)
        {
         startVals[0] += analogRead(PIN_COLORSENSE1);
@@ -776,8 +832,15 @@ void zigZagPath()
        }
        for(int j=0 ; j<4; j++)
        {
-         //startColors[j] = color(startVals[j]/NUM_AVG); 
-         startColors[j] = startVals[j]/NUM_AVG;
+         startColors[j] = color(startVals[j]/NUM_AVG, j); 
+         //startColors[j] = startVals[j]/NUM_AVG;
+       }
+       for(int j = 0; j < 4; j++){
+         if(startColors[j] == 1){
+           oppVals[j] = oppositeColor[j];
+         } else if(startColors[j] == 0){
+           oppVals[j] = homeColor[j];
+         }
        }
        int fix = 0;
        int modifier = 0;
@@ -817,13 +880,13 @@ void zigZagPath()
         Serial.println(sensor4);
           Serial.println(different_color(startColors[1], sensor2));
           Serial.println(different_color(startColors[3], sensor4));
-          if (different_color(startColors[0], sensor1))
+          if (same_color(oppVals[0], sensor1))
           {
            count ++; 
           }
           
            //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-          if(different_color(startColors[2], sensor3))
+          if(different_color(oppVals[2], sensor3))
           {
            count ++; 
           }
