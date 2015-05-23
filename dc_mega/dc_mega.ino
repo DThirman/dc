@@ -58,6 +58,8 @@
 #define DUMP 5
 #define DUMP_UP 7
 #define CALIBRATE_OPP_COLOR 8
+#define OLEFT 9
+#define ORIGHT 10
 
 //Parameters
 #define NUM_AVG 7
@@ -388,7 +390,7 @@ int duration(int action)
     switch (action)
   {
     case FORWARD:
-        return 1400;
+        return 1550;
       break;
     case FORWARD_WALL:
         return 8000;
@@ -398,6 +400,12 @@ int duration(int action)
       break;
     case RIGHT:
       return turnTime;
+      break;
+    case OLEFT:
+      return turnTime*1.33;
+      break;
+    case ORIGHT:
+      return turnTime*1.33;
       break;
     case BACK:
       return 1000;
@@ -420,8 +428,8 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
- int actions [NUM_ACTIONS] = {FORWARD, FORWARD, FORWARD_WALL, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, STOP, LEFT, STOP, BACK,
-                                STOP, FORWARD, FORWARD, FORWARD_WALL, STOP, RIGHT, STOP, FORWARD, STOP, RIGHT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD_WALL};
+ int actions [NUM_ACTIONS] = {FORWARD, FORWARD, FORWARD, CALIBRATE_OPP_COLOR, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
+                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};
                                  
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
@@ -554,6 +562,20 @@ void doAction(int action)
       }
       break;
     case RIGHT:
+      if(startCorner == PURPLESTART){
+        driveRight(75);
+      } else {
+        driveLeft(75);
+      }
+      break;
+      case OLEFT:
+      if(startCorner == PURPLESTART){
+        driveLeft(75);
+      } else {
+        driveRight(75);
+      }
+      break;
+    case ORIGHT:
       if(startCorner == PURPLESTART){
         driveRight(75);
       } else {
