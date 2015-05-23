@@ -618,7 +618,7 @@ void plannedPath()
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
             Serial.println("Change once");
-            
+              driveStop();
               change_once = true;
 //            startTime = millis() - duration(actions[i]) + ;
               dur = 0;
