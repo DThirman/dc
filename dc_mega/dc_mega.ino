@@ -24,12 +24,12 @@
 #define PIN_COLORSENSE3  A0
 #define PIN_COLORSENSE4  A1
 
-#define PIN_LEFT_PWM     4
+#define PIN_RIGHT_PWM     4
 
 
 #define PIN_LEFT_DIR1     22
 #define PIN_LEFT_DIR2     24
-#define PIN_RIGHT_PWM    5
+#define PIN_LEFT_PWM    5
 #define PIN_RIGHT_DIR1     23
 #define PIN_RIGHT_DIR2     25
 #define PIN_SERVO        3
@@ -118,8 +118,9 @@ NewPing sonar[SONAR_NUM] = {
 
 int cm[SONAR_NUM][NUM_AVG];
 
-int initialDistL;
-int initialDistR;
+bool leftStopped = false;
+bool rightStopped = false;
+int stopDist = 0;
 
 int color(int val, int sensor)
 {
@@ -241,16 +242,16 @@ void setup() {
   Serial.print("Start corner: ");
   Serial.println(startCorner);
   
-  turnTime = calibrateTurn();
+  //turnTime = calibrateTurn();
   delay(100);
 
   if(startCorner == PURPLESTART){
-    driveLeft(75);
+    //driveLeft(75);
   } else {
-    driveRight(75);
+    //driveRight(75);
   }
 
-  delay(turnTime);
+  //delay(turnTime);
     driveStop();
   delay(100);
 /**
@@ -615,6 +616,7 @@ void driveForwardWall(int speed)
   int vel = speed * 2.55;
   int leftDist;
   int rightDist;
+  
   delay(1);
   //int leftDist = sonar[SONAR_L].ping(); 
   echoCheck(SONAR_L);
@@ -629,6 +631,12 @@ void driveForwardWall(int speed)
   Serial.print(leftDist);      
   Serial.print("\tSensor 2 r: \t");
   Serial.println(rightDist);
+  Serial.print("Left stopped: ");
+  Serial.print(leftStopped);
+  Serial.print("\tRight stopped: ");
+  Serial.println(rightStopped);
+  Serial.print("Stop Dist: ");
+  Serial.println(stopDist);
   
     digitalWrite(PIN_LEFT_DIR1, 1);
   digitalWrite(PIN_RIGHT_DIR1, 0);
@@ -639,29 +647,55 @@ void driveForwardWall(int speed)
     analogWrite(PIN_LEFT_PWM, vel);
     analogWrite(PIN_RIGHT_PWM, vel);
   } else {
-    if(leftDist > 30){
+    if(leftDist > 28){
       analogWrite(PIN_LEFT_PWM, vel);
-    } else if (leftDist > 15 && leftDist < 27) {
-       digitalWrite(PIN_LEFT_DIR1, 0);
-       digitalWrite(PIN_LEFT_DIR2, 1);
-       analogWrite(PIN_LEFT_PWM, 35);
-    }
-     else {
+    } else if(leftStopped){
       analogWrite(PIN_LEFT_PWM, 0);
+    } else if(rightStopped){
+      if(leftDist > rightDist){
+        analogWrite(PIN_LEFT_PWM, 35);
+      } else if(leftDist < rightDist){
+        digitalWrite(PIN_LEFT_DIR1, 0);
+        digitalWrite(PIN_LEFT_DIR2, 1);
+        analogWrite(PIN_LEFT_PWM, 35);
+      } else {
+        leftStopped = true;
+        analogWrite(PIN_LEFT_PWM, 0);
+      }
+    } else if(leftDist < 24){
+      digitalWrite(PIN_LEFT_DIR1, 0);
+      digitalWrite(PIN_LEFT_DIR2, 1);
+      analogWrite(PIN_LEFT_PWM, 35);
+    } else {
+      analogWrite(PIN_LEFT_PWM, 0);
+      leftStopped = true;
+      stopDist = leftDist;
     }
-    if(rightDist > 30){
+    if(rightDist > 28){
       analogWrite(PIN_RIGHT_PWM, vel);
-    } else if (rightDist > 15 && rightDist < 27) {
+    } else if(rightStopped){
+      analogWrite(PIN_RIGHT_PWM, 0);
+    } else if(leftStopped){
+      if(rightDist > leftDist){
+        analogWrite(PIN_RIGHT_PWM, 35);
+      } else if(rightDist < leftDist){
+        digitalWrite(PIN_RIGHT_DIR1, 1);
+        digitalWrite(PIN_RIGHT_DIR2, 0);
+        analogWrite(PIN_RIGHT_PWM, 35);
+      } else {
+        rightStopped = true;
+        analogWrite(PIN_RIGHT_PWM, 0);
+      }
+    } else if(rightDist < 24){
       digitalWrite(PIN_RIGHT_DIR1, 1);
       digitalWrite(PIN_RIGHT_DIR2, 0);
-      analogWrite(PIN_RIGHT_PWM, 35); 
-    } 
-    else {
+      analogWrite(PIN_RIGHT_PWM, 35);
+    } else {
       analogWrite(PIN_RIGHT_PWM, 0);
+      rightStopped = true;
+      stopDist = rightDist;
     }
   }
-  
-
 
 }
 
