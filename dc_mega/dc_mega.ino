@@ -498,7 +498,7 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, STOP, 
           Serial.println("Proceed with dump");
           doAction(DUMP);
         } else {
-          Serial.println("Wow, don't proceed with dump, under no circumstances");
+          Serial.println("Wow, don't proceed with dump, under any circumstances");
           emergencyDump();
           return;
         }
@@ -1184,6 +1184,58 @@ void zigZagPath()
 
 void emergencyDump()
 {
+  int state = 0;
+  bool dumped = false;
+  unsigned long startTime;
+  
+  while(!dumped && state < 4){
+    startTime = millis();
+    while(millis() - startTime < 5000){
+      int dumpColors[4] = {0, 0, 0, 0};
+      for(uint8_t j = 0; j < NUM_AVG; ++j){
+        dumpColors[0] += analogRead(PIN_COLORSENSE1);
+        dumpColors[1] += analogRead(PIN_COLORSENSE2);
+        dumpColors[2] += analogRead(PIN_COLORSENSE3);
+        dumpColors[3] += analogRead(PIN_COLORSENSE4);
+      }
+      for(uint8_t j = 0; j < 4; ++j){
+        dumpColors[j] = dumpColors[j]/NUM_AVG;
+        Serial.print("Dump color 1: ");
+        Serial.println(dumpColors[j]);
+      }
+      int count = 0;
+      for(uint8_t j = 0; j < 4; ++j){
+        if(color(dumpColors[j], j) == color(oppositeColor[j], j)){
+          Serial.print("Same color as opposite: ");
+          Serial.println(j);
+          count++;
+        }
+      }
+      if(count == 4){
+         dumped = true;
+         doAction(DUMP);
+         break;
+      } else {
+        if(state == 0){ // forward
+          driveForward(100);
+        } else if(state == 1){ //back
+          driveBack(100);
+        } else if(state == 2){ //left
+          driveLeft(75);
+          delay(turnTime);
+          driveForward(80);
+        } else { //right
+          driveRight(75);
+          delay(turnTime);
+          driveForward(80);
+        }
+      }
+    }
+    state++;
+  }
+  if(!dumped){
+    doAction(DUMP);
+  }
 }
 
 void gameOverMan()
