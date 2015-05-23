@@ -394,7 +394,7 @@ int duration(int action)
     switch (action)
   {
     case FORWARD:
-        return 1550;
+        return 1650;
       break;
     case FORWARD_WALL:
         return 8000;
@@ -432,9 +432,9 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
- int actions [NUM_ACTIONS] = {FORWARD, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP/*, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
-                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP*/};
-                                 
+ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
+                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};
+                                                                     //^stops here
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
@@ -445,7 +445,7 @@ void plannedPath()
     {
       bool change_once = false;
       startTime = millis();
-      if(actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL){
+      if(actions[i] == BACK || actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL || actions[i] == OLEFT || actions[i] == ORIGHT || actions[i] == DUMP || actions[i] == DUMP_UP){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
@@ -464,10 +464,10 @@ void plannedPath()
         oppositeColor[1] = calibrate[1]/COLORSETUP;
         oppositeColor[2] = calibrate[2]/COLORSETUP;
         oppositeColor[3] = calibrate[3]/COLORSETUP;
-        colorThresh[0] = abs((homeColor[0]-oppositeColor[0]))/10;
-        colorThresh[1] = abs((homeColor[1]-oppositeColor[1]))/10;
-        colorThresh[2] = abs((homeColor[2]-oppositeColor[2]))/10;
-        colorThresh[3] = abs((homeColor[3]-oppositeColor[3]))/10;
+        colorThresh[0] = abs((homeColor[0]-oppositeColor[0]))/4;
+        colorThresh[1] = abs((homeColor[1]-oppositeColor[1]))/4;
+        colorThresh[2] = abs((homeColor[2]-oppositeColor[2]))/4;
+        colorThresh[3] = abs((homeColor[3]-oppositeColor[3]))/4;
         oppositeCalibrated = true;
         Serial.print("Home 1: ");
         Serial.print(homeColor[0]);
@@ -594,12 +594,13 @@ void plannedPath()
             Serial.println("Change once");
               change_once = true;
 //            startTime = millis() - duration(actions[i]) + 50;
-              dur = 50;
+              dur = 300;
               startTime = millis();
 
             //startTime -= 500;
             //modifier += 500;
           }
+          count = 0;
           
           delay(100);
         }
