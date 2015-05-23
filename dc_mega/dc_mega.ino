@@ -67,8 +67,8 @@
 
 #define NUM_ACTIONS 44
 
-#define PURPLE 1
-#define WHITE 0
+#define PURPLE 0
+#define WHITE 1
 
 #define SONAR_NUM 4
 #define SONAR_R 0
@@ -109,7 +109,7 @@ int prevFrontVal = 0;
 int prevBackVal = 0;
 
 int turnTime = 0;
-int thresh = 35;
+int thresh = 50;
 
 Servo s;
 
@@ -141,12 +141,22 @@ int color(int val, int sensor)
    }
    */
    if(same_color(val, homeColor[sensor], sensor)){
-     return 1;
+     return startCorner;
    } else if(same_color(val, oppositeColor[sensor], sensor)){
-     return 0;
+     if(startCorner == PURPLESTART){
+       return WHITESTART;
+     } else {
+       return PURPLESTART;
+     }
+   } else if(startCorner == WHITESTART && val > homeColor[sensor]){
+       return WHITESTART;
+   } else if(startCorner == PURPLESTART && val > oppositeColor[sensor]){
+     return WHITESTART;
    } else {
      return -1;
    }
+   
+   
 }
 
 bool different_color(int a, int b)
@@ -394,7 +404,7 @@ int duration(int action)
     switch (action)
   {
     case FORWARD:
-        return 1650;
+        return 3000;
       break;
     case FORWARD_WALL:
         return 8000;
@@ -428,13 +438,13 @@ void plannedPath()
   int actionCounter = 0;
 
   int forwardTime = 1400;
-  int startTime;
+  unsigned long startTime;
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
- int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, LEFT, STOP, BACK, STOP, FORWARD, FORWARD, FORWARD, FORWARD, FORWARD,
+ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD,
                                 STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};
-                                                                     //^stops here
+                                                                     //^stops here, stop.
 
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
@@ -514,15 +524,23 @@ void plannedPath()
          startVals[j] = startVals[j]/NUM_AVG;
        }
        for(int j = 0; j < 4; j++){
-         if(startColors[j] == 1){
-           oppVals[j] = oppositeColor[j];
-         } else if(startColors[j] == 0){
-           oppVals[j] = homeColor[j];
+         if(startColors[j] == WHITESTART){
+           if(startCorner == WHITESTART){
+             oppVals[j] = oppositeColor[j];
+           } else {
+             oppVals[j] = homeColor[j];
+           }
+         } else if(startColors[j] == PURPLESTART){
+           if(startCorner == WHITESTART){
+             oppVals[j] = homeColor[j];
+           } else {
+             oppVals[j] = oppositeColor[j];
+           }
          }
        }
        int fix = 0;
        int modifier = 0;
-       int dur =  (duration(actions[i]) + modifier);
+       unsigned long dur =  (duration(actions[i]) + modifier);
        startTime = millis();
       while(millis() - startTime < dur)
         {
@@ -564,8 +582,16 @@ void plannedPath()
         Serial.print(sensor3);
               Serial.print("\tSensor 4: ");
         Serial.println(sensor4);
-          Serial.println(different_color(startColors[1], sensor2));
-          Serial.println(different_color(startColors[3], sensor4));
+          Serial.println(same_color(oppVals[0], sensor1, 0));
+          Serial.println(same_color(oppVals[2], sensor3, 2));
+          Serial.print("Opp 1: ");
+            Serial.print(oppVals[0]);      
+                  Serial.print("\tOpp 2: ");
+            Serial.print(oppVals[1]);
+                  Serial.print("\tOpp 3: ");
+            Serial.print(oppVals[2]);
+                  Serial.print("\tOpp 4: ");
+            Serial.println(oppVals[3]);
           if(!oppositeCalibrated){
             if (different_color(startVals[0], sensor1))
             {
@@ -592,9 +618,10 @@ void plannedPath()
           
           if(count == 2 && !change_once && actions[i] == FORWARD){
             Serial.println("Change once");
+            
               change_once = true;
-//            startTime = millis() - duration(actions[i]) + 50;
-              dur = 300;
+//            startTime = millis() - duration(actions[i]) + ;
+              dur = 0;
               startTime = millis();
 
             //startTime -= 500;
@@ -620,10 +647,10 @@ void doAction(int action)
   switch (action)
   {
     case FORWARD:
-      driveForward(100);
+      driveForward(80);
       break;
     case FORWARD_WALL:
-      driveForwardWall(100);
+      driveForwardWall(80);
       break;
     case LEFT:
       if(startCorner == PURPLESTART){
@@ -654,7 +681,7 @@ void doAction(int action)
       }
       break;
     case BACK:
-      driveBack(100);
+      driveBack(80);
       break;
     case STOP:
       driveStop();
