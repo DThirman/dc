@@ -51,6 +51,7 @@
 
 #define FORWARD 0
 #define FORWARD_WALL 6
+#define FORWARD_SLIGHT 11
 #define LEFT 1
 #define RIGHT 2
 #define BACK 3
@@ -406,6 +407,9 @@ int duration(int action)
     case FORWARD:
         return 3000;
       break;
+    case FORWARD_SLIGHT:
+        return 1600;
+      break;
     case FORWARD_WALL:
         return 8000;
     break;
@@ -442,10 +446,11 @@ void plannedPath()
 
   //turnTime *=.95;
   //int actions [NUM_ACTIONS] = {FORWARD, FORWARD, STOP, LEFT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP, FORWARD, STOP, RIGHT, STOP, FORWARD, FORWARD, FORWARD, FORWARD, STOP};
- int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD,
-                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, FORWARD, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};
+ /*int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD,
+                                STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, LEFT, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};*/
                                                                      //^stops here, stop.
-
+int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, STOP, OLEFT, STOP, BACK, STOP,
+                                FORWARD_SLIGHT, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, ORIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
 //  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
@@ -659,6 +664,14 @@ void doAction(int action)
         driveRight(75);
       }
       break;
+      
+    case FORWARD_SLIGHT:
+      if(startCorner == PURPLESTART){
+        driveForwardLeft(100);
+      } else {
+        driveForwardRight(100);
+      }
+      break;
     case RIGHT:
       if(startCorner == PURPLESTART){
         driveRight(75);
@@ -717,6 +730,32 @@ void driveForward(int speed)
 
   analogWrite(PIN_LEFT_PWM, vel);
   analogWrite(PIN_RIGHT_PWM, vel);
+
+  digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
+}
+
+void driveForwardLeft(int speed)
+{
+  int vel = speed * 2.55;
+
+  analogWrite(PIN_LEFT_PWM, vel*.9);
+  analogWrite(PIN_RIGHT_PWM, vel);
+
+  digitalWrite(PIN_LEFT_DIR1, 1);
+  digitalWrite(PIN_RIGHT_DIR1, 0);
+   digitalWrite(PIN_LEFT_DIR2, 0);
+  digitalWrite(PIN_RIGHT_DIR2, 1);
+}
+
+void driveForwardRight(int speed)
+{
+  int vel = speed * 2.55;
+
+  analogWrite(PIN_LEFT_PWM, vel);
+  analogWrite(PIN_RIGHT_PWM, vel*.9);
 
   digitalWrite(PIN_LEFT_DIR1, 1);
   digitalWrite(PIN_RIGHT_DIR1, 0);
