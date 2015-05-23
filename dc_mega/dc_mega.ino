@@ -408,7 +408,7 @@ int duration(int action)
         return 3000;
       break;
     case FORWARD_SLIGHT:
-        return 1600;
+        return 50;
       break;
     case FORWARD_WALL:
         return 8000;
@@ -449,8 +449,8 @@ void plannedPath()
  /*int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD,
                                 STOP, OLEFT, STOP, BACK, STOP, FORWARD, STOP, DUMP, STOP, LEFT, STOP, DUMP_UP, STOP, FORWARD, STOP, FORWARD, FORWARD, STOP};*/
                                                                      //^stops here, stop.
-int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, STOP, OLEFT, STOP, BACK, STOP,
-                                FORWARD_SLIGHT, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, ORIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
+int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWARD, STOP, STOP, OLEFT, STOP, BACK, STOP, FORWARD_SLIGHT, FORWARD, FORWARD, FORWARD, STOP, LEFT, STOP, BACK, STOP,
+                                FORWARD_SLIGHT, FORWARD, STOP, DUMP, FORWARD, STOP, DUMP_UP, FORWARD, RIGHT, FORWARD, RIGHT, STOP, BACK, STOP, FORWARD, LEFT, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, DUMP};
   //int durations [NUM_ACTIONS] = {1300, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100, 1300, 100, 400, 100, 1300, 1300, 1300, 1300, 100};
 
 //  int durations [NUM_ACTIONS] = {forwardTime, forwardTime, 100, turnTime, forwardTime, forwardTime, forwardTime, turnTime, forwardTime, 100, turnTime, 100, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, forwardTime, 100};
@@ -460,12 +460,41 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWAR
     {
       bool change_once = false;
       startTime = millis();
-      if(actions[i] == BACK || actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL || actions[i] == OLEFT || actions[i] == ORIGHT || actions[i] == DUMP || actions[i] == DUMP_UP){
+      if(actions[i] == BACK || actions[i] == STOP || actions[i] == LEFT || actions[i] == RIGHT || actions[i] == FORWARD_WALL || actions[i] == OLEFT || actions[i] == ORIGHT || actions[i] == DUMP_UP){
         while(millis() - startTime < duration(actions[i])){
           doAction(actions[i]);
           delay(5);
         }
-      } else if (actions[i] == CALIBRATE_OPP_COLOR)
+      } else if(actions[i] == DUMP){
+        int dumpColors[4] = {0, 0, 0, 0};
+        for(uint8_t j = 0; j < NUM_AVG; ++j){
+          dumpColors[0] += analogRead(PIN_COLORSENSE1);
+          dumpColors[1] += analogRead(PIN_COLORSENSE2);
+          dumpColors[2] += analogRead(PIN_COLORSENSE3);
+          dumpColors[3] += analogRead(PIN_COLORSENSE4);
+        }
+        for(uint8_t j = 0; j < 4; ++j){
+          dumpColors[j] = dumpColors[j]/NUM_AVG;
+          Serial.print("Dump color 1: ");
+          Serial.println(dumpColors[j]);
+        }
+        int count = 0;
+        for(uint8_t j = 0; j < 4; ++j){
+          if(color(dumpColors[j], j) == color(oppositeColor[j], j)){
+            Serial.print("Same color as opposite: ");
+            Serial.println(j);
+            count++;
+          }
+        }
+        if(count == 4){
+          Serial.println("Proceed with dump");
+          doAction(DUMP);
+        } else {
+          Serial.println("Wow, don't proceed with dump, under no circumstances");
+          emergencyDump();
+          return;
+        }
+      }else if (actions[i] == CALIBRATE_OPP_COLOR)
       {
         int calibrate[4] = {0,0,0,0};
         for (uint8_t j = 0; j < COLORSETUP; ++j)
@@ -587,8 +616,8 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWAR
         Serial.print(sensor3);
               Serial.print("\tSensor 4: ");
         Serial.println(sensor4);
-          Serial.println(same_color(oppVals[0], sensor1, 0));
-          Serial.println(same_color(oppVals[2], sensor3, 2));
+          Serial.println(color(oppVals[0], 0) == color(sensor1, 0));
+          Serial.println(color(oppVals[2], 2) == color(sensor3, 2));
           Serial.print("Opp 1: ");
             Serial.print(oppVals[0]);      
                   Serial.print("\tOpp 2: ");
@@ -609,13 +638,13 @@ int actions [NUM_ACTIONS] = {FORWARD, STOP, CALIBRATE_OPP_COLOR, FORWARD, FORWAR
              count ++; 
             }
           } else {
-            if (same_color(oppVals[0], sensor1, 0))
+            if(color(oppVals[0], 0) == color(sensor1, 0))
             {
              count ++; 
             }
             
              //if ( (startColors[3] >= sensor4 && (100*(startColors[3]-sensor4))/startColors[3] < thresh)  || (startColors[3] < sensor4 && (100*(sensor4 - startColors[3]))/sensor4 < thresh))
-            if(same_color(oppVals[2], sensor3, 2))
+             if(color(oppVals[2], 2) == color(sensor3, 2))
             { //kevin told me to change this
              count ++; 
             }
@@ -667,9 +696,9 @@ void doAction(int action)
       
     case FORWARD_SLIGHT:
       if(startCorner == PURPLESTART){
-        driveForwardLeft(100);
+        driveLeft(50);
       } else {
-        driveForwardRight(100);
+        driveRight(50);
       }
       break;
     case RIGHT:
@@ -1142,6 +1171,9 @@ void zigZagPath()
   s.write(BIN_INVERTED);     
 }
 
+void emergencyDump()
+{
+}
 
 void gameOverMan()
 {
